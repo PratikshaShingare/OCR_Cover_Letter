@@ -62,9 +62,8 @@
   </main>
 
   <!-- Modular Vanilla JS Entrypoint -->
-  <!-- Modular Vanilla JS Entrypoint with dual-path fallback -->
-  <script type="module">
-    import('./frontend/js/app.js').catch(() => import('./js/app.js'));
-  </script>
+  <!-- Modular Vanilla JS Entrypoint with static dual-path resolution -->
+  <script type="module" src="./frontend/js/app.js"></script>
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>

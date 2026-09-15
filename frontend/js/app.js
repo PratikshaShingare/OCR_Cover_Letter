@@ -26,6 +26,8 @@ const STEPS = [
 
 export const App = {
   init() {
+    if (window.__KHANNA_APP_LOADED__) return;
+    window.__KHANNA_APP_LOADED__ = true;
     this.bindHeader();
     this.renderStepper();
 
@@ -153,7 +155,10 @@ export const App = {
   }
 };
 
-// Bootstrap application on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
+// Bootstrap application immediately if DOM ready, or on DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => App.init());
+} else {
   App.init();
-});
+}
+
