@@ -16,7 +16,7 @@ COPY templates/ ./templates/
 COPY Europe_covering_letter_template_clean.* ./
 COPY Japan_covering_letter_template_clean.* ./
 COPY Singapore_covering_letter_template_clean.* ./
-COPY khanna\ travels\ logo.png ./
+COPY ["khanna travels logo.png", "./"]
 
 # Create data, uploads, and temp storage directories
 RUN mkdir -p data temp uploads internal_records
@@ -27,4 +27,4 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "python -m uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
