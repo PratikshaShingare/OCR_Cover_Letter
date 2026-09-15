@@ -1,0 +1,44 @@
+{
+  "id": "singapore_tourism",
+  "name": "Singapore Tourist Visa Template",
+  "country": "Singapore",
+  "visaType": "Tourism",
+  "baseTemplateId": "base_tourism",
+  "config": {
+    "dateHeader": {
+      "prefix": "Date: ",
+      "format": "dot",
+      "align": "right"
+    },
+    "recipient": [
+      "To,",
+      "The Consulate General of the Republic of Singapore,",
+      "152 Marker Chambers IV,222 Jamnalal Bajaj Marg Nariman Point,",
+      "Mumbai 400021"
+    ],
+    "subject": {
+      "prefix": "Sub: ",
+      "text": "Request for issue of Tourism Visa for me & my family",
+      "bold": true,
+      "underline": true
+    },
+    "salutation": "Dear Sir,",
+    "paragraphs": {
+      "intro": "I, {applicant.fullName} planning to visit Singapore for Tourism purposes along with my {companionsText} & would like to travel on {travel.startDateFormatted} and will stay until {travel.endDateFormatted}.",
+      "passengerIntro": "The names of the passengers are:",
+      "hotel": "We will be staying at {hotel.paragraphSummary}",
+      "financial": "All our travel expenses will be borne by {financial.sponsorWording}.\nI am enclosing the bank statement of my bank account for your perusal.",
+      "request": "Request you to kindly grant us the Singapore visa multiple entries."
+    },
+    "closing": {
+      "thanks": "",
+      "salutation": "Thanks & Regards,",
+      "signature": "{applicant.fullName}\nEmail Id: {applicant.emailAddress}\nMob: {applicant.mobileNumber}"
+    },
+    "overrides": {
+      "hotelPresentation": "paragraph",
+      "travellerPresentation": "table",
+      "passengerTableHeaders": ["Sr no.", "Passengers Name", "Passport No", "Relation", "Occupation"]
+    }
+  }
+}

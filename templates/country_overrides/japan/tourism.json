@@ -1,0 +1,45 @@
+{
+  "id": "japan_tourism",
+  "name": "Japan Tourist Visa Template",
+  "country": "Japan",
+  "visaType": "Tourism",
+  "baseTemplateId": "base_tourism",
+  "config": {
+    "dateHeader": {
+      "prefix": "",
+      "format": "ordinal",
+      "align": "right"
+    },
+    "recipient": [
+      "To,",
+      "The Visa Officer,",
+      "Consulate General of Japan",
+      "Mumbai, India"
+    ],
+    "subject": {
+      "prefix": "Subject: ",
+      "text": "Cover Letter for my Tourist Visa Application.",
+      "bold": true,
+      "underline": false
+    },
+    "salutation": "Dear Sir/Madam,",
+    "paragraphs": {
+      "intro": "I, {applicant.fullName} (holding {applicant.nationality} Passport No.: {applicant.passportNumber} issued at {applicant.issuePlace} on {applicant.issueDateFormatted}) would be travelling to your esteemed country along with {companionsText} from {travel.startDateFormatted} to {travel.endDateFormatted} for the purpose of Holiday.",
+      "employment": "I am Employed – {employment.employerName}.",
+      "family": "{applicant.familyDetailsText}",
+      "hotelIntro": "We will be staying at the below hotels:",
+      "financial": "All our travel expenses will be borne by {financial.sponsorWording}.",
+      "enclosed": "Kindly find the attachment to our visa application form along with other relevant documents for the issuance of our visa."
+    },
+    "closing": {
+      "thanks": "Thanking You!",
+      "salutation": "Sincerely,",
+      "signature": "{applicant.fullName}\nPhone No.: {applicant.mobileNumber}\nEmail id: {applicant.emailAddress}"
+    },
+    "overrides": {
+      "hotelPresentation": "table",
+      "hotelTableHeaders": ["NAME", "DATE", "CONTACT NO."],
+      "travellerPresentation": "narrative_family"
+    }
+  }
+}

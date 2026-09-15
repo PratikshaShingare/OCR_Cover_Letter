@@ -1,0 +1,26 @@
+{
+  "id": "france_tourism",
+  "name": "France / Europe Base Template",
+  "country": "France",
+  "visaType": "Tourism",
+  "baseTemplateId": "base_tourism",
+  "config": {
+    "recipient": [
+      "To,",
+      "The Visa Officer,",
+      "The Consulate General of France",
+      "Mumbai, India"
+    ],
+    "subject": {
+      "prefix": "Subject: ",
+      "text": "Cover Letter for France Visa Application for Tourism",
+      "bold": true,
+      "underline": false
+    },
+    "salutation": "Dear Sir/Ma’am,",
+    "overrides": {
+      "hotelPresentation": "narrative",
+      "travellerPresentation": "narrative"
+    }
+  }
+}

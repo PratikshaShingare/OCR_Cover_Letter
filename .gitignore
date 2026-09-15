@@ -1,0 +1,106 @@
+# ==============================================================================
+# Khanna Travels & Holidays — Production .gitignore
+# Strictly protects secrets, client records, passports, databases, and artifacts
+# ==============================================================================
+
+# Environment and Secrets
+.env
+.env.*
+.env.local
+!.env.example
+*.key
+*.pem
+*.cert
+
+# Python Environments & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.venv/
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.mypy_cache/
+
+# Node & Frontend Build Artifacts
+node_modules/
+frontend/node_modules/
+.npm
+frontend/dist/
+dist/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE & Operating System Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Client & Application Data (Never Commit Client Records)
+data/*.xlsx
+data/*.xls
+*.xlsx
+*.xls
+
+# Databases Containing Client Data
+*.db
+*.sqlite
+*.sqlite3
+khanna_visa.db
+
+# Client Passports, Uploads & Previews
+uploads/
+uploaded_files/
+internal_records/
+
+# Generated Documents & Output Files
+generated/
+
+# Temporary & Cache Processing Files
+temp/
+tmp/
+ocr_temp/
+processed_images/
+.cache/
+*.log
+logs/
+
+# Unused / Scratch Directories
+unused/
+scratch/
+
+# Approved Application Templates & Assets (Explicitly Preserved)
+!Europe_covering_letter_template_clean.docx
+!Europe_covering_letter_template_clean.pdf
+!Japan_covering_letter_template_clean.docx
+!Japan_covering_letter_template_clean.pdf
+!Singapore_covering_letter_template_clean.docx
+!Singapore_covering_letter_template_clean.pdf
+!khanna travels logo.png
+!frontend/logo.png
+

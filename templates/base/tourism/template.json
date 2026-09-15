@@ -1,0 +1,44 @@
+{
+  "id": "base_tourism",
+  "name": "Base Europe / Schengen Tourism Template",
+  "country": "Europe / Standard",
+  "visaType": "Tourism",
+  "isBase": true,
+  "config": {
+    "dateHeader": {
+      "prefix": "Date- ",
+      "format": "ordinal",
+      "align": "right"
+    },
+    "recipient": [
+      "To,",
+      "The Visa Officer,",
+      "The Consulate General of {country}",
+      "Mumbai, India"
+    ],
+    "subject": {
+      "prefix": "Subject: ",
+      "text": "Cover Letter for {country} Visa Application for {purpose}",
+      "bold": true,
+      "underline": false
+    },
+    "salutation": "Dear Sir/Ma’am,",
+    "paragraphs": {
+      "intro": "I, {applicant.fullName} (holding {applicant.nationality} Passport No.: {applicant.passportNumber} issued at {applicant.issuePlace} on {applicant.issueDateFormatted}) would like to visit your admired country along with {companionsText} from {travel.startDateFormatted} to {travel.endDateFormatted} for the purpose of {travel.purpose}.",
+      "employmentResidence": "I {applicant.residenceEmploymentText}. Kindly find our relevant documents for your reference.",
+      "itinerary": "{travel.itineraryNarration} Kindly find our relevant documents for your perusal. We will return back to India after the end of our visit as we need to rejoin and look after our work and personal commitments.",
+      "financial": "All the expenses for travel to your country including Visa Fees, Flight bookings, Hotel booking, Travel Insurance and other travel and personal expenses for us will be borne by {financial.sponsorWording}. Kindly find our financial documents for your reference.",
+      "enclosed": "Enclosed please find our visa application form duly filled in and signed along with valid passport and other relevant documents to support our visa application.",
+      "request": "I request that you kindly grant us the necessary visa."
+    },
+    "closing": {
+      "thanks": "Thanking You!",
+      "salutation": "Yours Faithfully,",
+      "signature": "{applicant.fullName}\nPhone No.: {applicant.mobileNumber}\nEmail id: {applicant.emailAddress}"
+    },
+    "overrides": {
+      "hotelPresentation": "narrative",
+      "travellerPresentation": "narrative"
+    }
+  }
+}
