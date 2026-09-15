@@ -11,7 +11,15 @@ import re
 import shutil
 
 from ..models.master_schema import MasterApplicationData, Traveller
-from ..services.storage import save_application, get_application, list_applications, delete_application, generate_next_application_id
+from ..services.storage import (
+    save_application,
+    get_application,
+    list_applications,
+    delete_application,
+    generate_next_application_id,
+    get_existing_blank_draft,
+    remove_other_drafts_for_passport,
+)
 from ..services.excel_service import ExcelService
 from ..ocr.ocr_service import get_ocr_service
 
@@ -25,8 +33,14 @@ async def create_or_update_application(app_data: MasterApplicationData):
     """
     Saves verified Master Client Data to the database
     and automatically populates the internal Excel data sheet.
+    Guarantees no duplicate draft applications for the same passport.
     """
     try:
+        if app_data.passport and app_data.passport.passportNumber:
+            clean_pass = app_data.passport.passportNumber.strip()
+            if clean_pass:
+                remove_other_drafts_for_passport(clean_pass, keep_id=app_data.applicationId)
+
         saved = save_application(app_data)
         
         # Automatically update internal Excel data sheet on backend
@@ -43,9 +57,13 @@ async def create_or_update_application(app_data: MasterApplicationData):
 @router.post("/new", response_model=MasterApplicationData)
 async def create_new_blank_application():
     """
-    Creates a 100% blank new application record with a sequential ID (e.g. APP-2026-00001).
-    Contains zero sample/demo data.
+    Creates or reuses an existing 100% blank new application record.
+    Prevents spawning multiple empty draft applications.
     """
+    existing_blank = get_existing_blank_draft()
+    if existing_blank:
+        return existing_blank
+
     new_id = generate_next_application_id()
     blank_app = MasterApplicationData(applicationId=new_id)
     saved = save_application(blank_app)
@@ -237,6 +255,12 @@ async def upload_application_passport(app_id: str, file: UploadFile = File(...))
     if getattr(extracted, "fieldDetails", None):
         for k, v in extracted.fieldDetails.items():
             app.fieldDetails[k] = v
+
+    # Enforce single draft per passport
+    if app.passport and app.passport.passportNumber:
+        clean_pass = app.passport.passportNumber.strip()
+        if clean_pass:
+            remove_other_drafts_for_passport(clean_pass, keep_id=app.applicationId)
 
     # Save application
     saved_app = save_application(app)

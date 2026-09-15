@@ -108,6 +108,65 @@ def get_application(app_id: str) -> Optional[MasterApplicationData]:
     return None
 
 
+def get_existing_blank_draft() -> Optional[MasterApplicationData]:
+    """Finds an existing blank draft application without applicant name or passport number."""
+    init_db()
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT data_json FROM applications 
+        WHERE (status = 'Draft' OR status IS NULL)
+          AND (passport_number IS NULL OR passport_number = '')
+          AND (applicant_name IS NULL OR applicant_name = '')
+        ORDER BY created_at DESC LIMIT 1
+    """)
+    row = cursor.fetchone()
+    conn.close()
+    if row and row["data_json"]:
+        try:
+            return MasterApplicationData.model_validate_json(row["data_json"])
+        except Exception:
+            pass
+    return None
+
+
+def find_draft_by_passport(passport_number: str, exclude_id: Optional[str] = None) -> Optional[MasterApplicationData]:
+    """Finds an existing draft application matching the given passport number."""
+    if not passport_number or not passport_number.strip():
+        return None
+    p_num = passport_number.strip()
+    init_db()
+    conn = get_connection()
+    cursor = conn.cursor()
+    if exclude_id:
+        cursor.execute("SELECT data_json FROM applications WHERE passport_number = ? AND id != ? AND status = 'Draft' LIMIT 1", (p_num, exclude_id))
+    else:
+        cursor.execute("SELECT data_json FROM applications WHERE passport_number = ? AND status = 'Draft' LIMIT 1", (p_num,))
+    row = cursor.fetchone()
+    conn.close()
+    if row and row["data_json"]:
+        try:
+            return MasterApplicationData.model_validate_json(row["data_json"])
+        except Exception:
+            pass
+    return None
+
+
+def remove_other_drafts_for_passport(passport_number: str, keep_id: str):
+    """Ensures only one draft application exists for a given passport number."""
+    if not passport_number or not passport_number.strip():
+        return
+    p_num = passport_number.strip()
+    init_db()
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM applications WHERE passport_number = ? AND id != ? AND status = 'Draft'", (p_num, keep_id))
+    rows = cursor.fetchall()
+    conn.close()
+    for r in rows:
+        delete_application(r["id"])
+
+
 def list_applications() -> List[Dict[str, Any]]:
     init_db()
     conn = get_connection()

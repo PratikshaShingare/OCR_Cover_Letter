@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ocr-cover-letter
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: ALLOWED_ORIGINS
+        value: https://pratikshashingare.github.io

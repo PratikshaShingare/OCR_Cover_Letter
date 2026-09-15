@@ -1,9 +1,43 @@
 /**
  * Khanna Travels & Holidays — API Client
  * Centralized, reusable asynchronous service for backend endpoints.
+ * Automatically resolves local vs production backend endpoint.
  */
 
-const API_BASE = '/api';
+// Production Backend HTTPS Endpoint for Khanna Travels Visa Automation System
+const DEFAULT_PROD_API = 'https://ocr-cover-letter.onrender.com/api';
+
+export function resolveApiBaseUrl() {
+  if (typeof window !== 'undefined') {
+    // 1. URL parameter override: ?api=https://...
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryApi = urlParams.get('api');
+    if (queryApi) {
+      return queryApi.replace(/\/+$/, '');
+    }
+
+    // 2. Global window override if injected
+    if (window.__API_BASE_URL__) {
+      return window.__API_BASE_URL__.replace(/\/+$/, '');
+    }
+
+    // 3. User configured localStorage override
+    const stored = localStorage.getItem('API_BASE_URL');
+    if (stored) {
+      return stored.replace(/\/+$/, '');
+    }
+
+    // 4. Hostname detection: if on GitHub Pages (pratikshashingare.github.io) or remote domain
+    const isLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+    if (!isLocal && window.location.hostname.includes('github.io')) {
+      return DEFAULT_PROD_API;
+    }
+  }
+  // Local development default
+  return '/api';
+}
+
+const API_BASE = resolveApiBaseUrl();
 
 export const Api = {
   // Application CRUD

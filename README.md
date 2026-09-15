@@ -85,7 +85,41 @@ The system includes and conforms to the approved Khanna Travels & Holidays cover
 
 ---
 
-## 5. Getting Started & Running Instructions
+## 5. Live GitHub Pages Deployment (Frontend)
+
+The frontend is configured for automatic continuous deployment to **GitHub Pages**:
+* **Live Website URL**: **`https://pratikshashingare.github.io/OCR_Cover_Letter/`**
+* **Deployment Workflow**: `.github/workflows/deploy-pages.yml` automatically builds and publishes the static frontend upon every push to the `main` branch.
+* **Base Path Compatibility**: All static asset links, styles, and scripts use relative paths, ensuring complete rendering and navigation under `/OCR_Cover_Letter/`.
+
+### Setting Up GitHub Pages in the Repository:
+1. Navigate to your repository on GitHub: `https://github.com/PratikshaShingare/OCR_Cover_Letter`
+2. Go to **Settings** &rarr; **Pages**
+3. Under **Build and deployment** &rarr; **Source**, select **GitHub Actions**
+4. Every push to `main` will automatically build and publish the live site.
+
+---
+
+## 6. Backend Deployment (Cloud Hosting)
+
+Because GitHub Pages hosts static frontend assets only, the Python/FastAPI backend (handling OCR, SQLite database, single master Excel workbook, and python-docx document generation) runs on a backend-capable hosting service.
+
+### Recommended Free / One-Click Hosting Options:
+1. **Render (via `render.yaml` or `Dockerfile`)**:
+   - Connect your GitHub repository `PratikshaShingare/OCR_Cover_Letter` to [Render.com](https://render.com).
+   - Create a **Web Service** selecting the included `Dockerfile` (or `render.yaml`).
+   - Set environment variable: `ALLOWED_ORIGINS=https://pratikshashingare.github.io`
+2. **Railway / Koyeb / Fly.io**:
+   - Simply point to the repository; the included `Dockerfile` with Tesseract and Python dependencies builds and deploys automatically.
+3. **Connecting Frontend to Backend**:
+   - By default, the frontend points to `https://ocr-cover-letter.onrender.com/api` when accessed from GitHub Pages.
+   - You can also connect the live frontend to any deployed backend by adding the URL parameter:
+     `https://pratikshashingare.github.io/OCR_Cover_Letter/?api=https://YOUR-BACKEND-URL/api`
+     or setting `localStorage.setItem('API_BASE_URL', 'https://YOUR-BACKEND-URL/api')` in the browser console.
+
+---
+
+## 7. Local Development & Testing
 
 ### Prerequisites
 * Python 3.10 or higher
@@ -93,39 +127,28 @@ The system includes and conforms to the approved Khanna Travels & Holidays cover
 
 ### Step 1: Install Dependencies
 ```bash
-# Install backend dependencies
 python -m pip install -r backend/requirements.txt
 ```
 
-### Step 2: Run the Application
-Start the FastAPI server (serves the application API and executive frontend portal):
+### Step 2: Run Local Application
+Start the FastAPI server (serves the backend API and integrated frontend locally):
 
 ```bash
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
+Open your browser at: `http://127.0.0.1:8000`
 
-Open your browser at:
-```
-http://127.0.0.1:8000
-```
-
----
-
-## 6. Running Automated Tests
-
-Run the comprehensive unit and integration test suite:
-
+### Step 3: Run Automated Test Suite
 ```bash
 python -m unittest discover tests
 ```
 
-*Tests verify: Master Schema validation, Base Europe template assembly, Japan hotel table structure, Singapore passenger table structure, Single Master Excel workbook and worksheet upsert, python-docx document generation, ReportLab PDF generation, and all FastAPI endpoints.*
-
 ---
 
-## 7. Security & Data Protection
+## 8. Security & Data Protection
 
-* **Zero Client Data in Version Control**: Uploaded passport scans, processed preview images, generated cover letters, and client Excel files are stored on the server and are strictly excluded from version control via `.gitignore`.
+* **Zero Client Data in Version Control**: Uploaded passport scans, preview images, generated cover letters, and client Excel files are stored on the server and are strictly excluded from version control via `.gitignore`.
 * **Master Excel Exclusion**: The runtime master workbook `data/Khanna_Travels_Client_Master.xlsx` is created dynamically at runtime and is never committed to GitHub.
 * **No Hardcoded Secrets**: Secrets and SQLite database files (`*.db`) are excluded by `.gitignore`.
+
 

@@ -21,10 +21,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware for local Vite frontend dev server
+# Secure CORS configuration for GitHub Pages production frontend & local development
+ALLOWED_ORIGINS = [
+    "https://pratikshashingare.github.io",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+env_origins = os.getenv("ALLOWED_ORIGINS", "")
+if env_origins:
+    ALLOWED_ORIGINS.extend([o.strip() for o in env_origins.split(",") if o.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.github\.io.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
