@@ -234,21 +234,46 @@ export const PassportModule = {
       if (!file) return;
       const statusEl = container.querySelector('#upload-status');
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color: var(--primary); font-weight: 600;">Processing document & running native OCR extraction... Please wait.</span>`;
+        statusEl.innerHTML = `<span style="color: var(--primary); font-weight: 600;">Uploading document & generating high-resolution preview...</span>`;
       }
 
       try {
-        const res = await Api.uploadPassport(app.applicationId, file);
-        const totalPages = res.fileInfo.totalPages || 1;
-        State.setPassportFileStatus(true, res.fileInfo.isPdf ? 'pdf' : 'image', totalPages);
-        State.setApplication(res.application);
+        // Step 1: Fast upload & instant preview generation (< 0.5s)
+        const uploadRes = await Api.uploadPassportFast(app.applicationId, file);
+        const totalPages = uploadRes.fileInfo.totalPages || 1;
+        State.setPassportFileStatus(true, uploadRes.fileInfo.isPdf ? 'pdf' : 'image', totalPages);
+        State.setApplication(uploadRes.application);
         this.render(container);
+
+        // Step 2: Show immediate active status and run OCR extraction
+        const activeStatusEl = container.querySelector('#upload-status');
+        if (activeStatusEl) {
+          activeStatusEl.innerHTML = `<span style="color: var(--primary); font-weight: 600;">⚡ Document preview ready! Running OCR extraction... Please wait.</span>`;
+        }
+
+        try {
+          const ocrRes = await Api.extractPassportOcr(app.applicationId);
+          State.setApplication(ocrRes.application);
+          this.render(container);
+          const finalStatus = container.querySelector('#upload-status');
+          if (finalStatus) {
+            finalStatus.innerHTML = `<span style="color: #166534; font-weight: 600;">✓ Extraction completed. Master Client Data synchronized.</span>`;
+          }
+        } catch (ocrErr) {
+          console.warn('OCR extraction notice:', ocrErr);
+          const finalStatus = container.querySelector('#upload-status');
+          if (finalStatus) {
+            finalStatus.innerHTML = `<span style="color: #b45309; font-weight: 600;">⚠ Document preview loaded. You can verify and edit fields in Step 2.</span>`;
+          }
+        }
+
       } catch (err) {
         if (statusEl) {
           statusEl.innerHTML = `<span style="color: var(--danger);">Upload error: ${err.message}</span>`;
         }
       }
     };
+
 
     if (fileInput) {
       fileInput.addEventListener('change', (e) => {

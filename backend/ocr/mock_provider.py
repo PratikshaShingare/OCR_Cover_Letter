@@ -13,7 +13,7 @@ import tempfile
 from typing import Dict, Any, Optional, Tuple
 from PIL import Image
 from .ocr_service import BaseOCRProvider, ExtractedPassportData
-from .native_ocr import run_windows_ocr
+from .native_ocr import run_system_ocr, run_windows_ocr
 from .image_preprocessing import (
     render_pdf_to_images,
     load_image_bytes,
@@ -57,7 +57,7 @@ def get_oriented_page_ocr(img: Image.Image) -> Tuple[Image.Image, str, int]:
         t0 = tmp.name
     try:
         img.save(t0, "PNG")
-        txt0 = run_windows_ocr(t0)
+        txt0 = run_system_ocr(t0, psm=3)
     finally:
         if os.path.exists(t0):
             os.remove(t0)
@@ -73,7 +73,7 @@ def get_oriented_page_ocr(img: Image.Image) -> Tuple[Image.Image, str, int]:
             t = tmp.name
         try:
             rot.save(t, "PNG")
-            txt = run_windows_ocr(t)
+            txt = run_system_ocr(t, psm=3)
         finally:
             if os.path.exists(t):
                 os.remove(t)
@@ -137,7 +137,7 @@ class MockOCRProvider(BaseOCRProvider):
                     tmp_mrz_path = tmp_mrz.name
                 try:
                     mrz_img.save(tmp_mrz_path, "PNG")
-                    text_mrz = run_windows_ocr(tmp_mrz_path)
+                    text_mrz = run_system_ocr(tmp_mrz_path, psm=6)
                     if text_mrz:
                         ocr_texts.append(text_mrz)
                 finally:

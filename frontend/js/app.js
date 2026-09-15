@@ -55,6 +55,17 @@ export const App = {
       btnDashboard.addEventListener('click', () => State.setViewMode('dashboard'));
     }
 
+    const btnExcel = document.getElementById('header-btn-excel');
+    if (btnExcel) {
+      btnExcel.addEventListener('click', async () => {
+        try {
+          await Api.downloadMasterExcel();
+        } catch (err) {
+          alert(`Failed to download Master Excel: ${err.message}`);
+        }
+      });
+    }
+
     if (btnNewApp) {
       btnNewApp.addEventListener('click', async () => {
         try {

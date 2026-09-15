@@ -95,6 +95,32 @@ export const Api = {
     return res.json();
   },
 
+  async uploadPassportFast(appId, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/applications/${appId}/passport?extract=false`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Upload failed' }));
+      throw new Error(err.detail || 'Passport upload failed');
+    }
+    return res.json();
+  },
+
+  async extractPassportOcr(appId) {
+    const res = await fetch(`${API_BASE}/applications/${appId}/extract-ocr`, {
+      method: 'POST'
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'OCR Extraction failed' }));
+      throw new Error(err.detail || 'OCR Extraction failed');
+    }
+    return res.json();
+  },
+
+
   getPassportFileUrl(appId) {
     return `${API_BASE}/applications/${appId}/passport-file?t=${Date.now()}`;
   },
@@ -171,5 +197,20 @@ export const Api = {
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
+  },
+
+  async downloadMasterExcel() {
+    const res = await fetch(`${API_BASE}/excel/master`);
+    if (!res.ok) throw new Error('Failed to download Master Excel workbook');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Khanna_Travels_Client_Master.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
   }
 };
+
