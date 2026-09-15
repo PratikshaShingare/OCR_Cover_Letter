@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Khanna Travels & Holidays — Visa Document Automation System</title>
+  <link rel="icon" type="image/png" href="./frontend/logo.png" />
+  <link rel="icon" type="image/png" href="./logo.png" />
+  
+  <!-- Typography Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Modular Stylesheets -->
+  <!-- Modular Stylesheets (Dual-path compatibility) -->
+  <link rel="stylesheet" href="./frontend/css/main.css" />
+  <link rel="stylesheet" href="./frontend/css/layout.css" />
+  <link rel="stylesheet" href="./frontend/css/forms.css" />
+  <link rel="stylesheet" href="./frontend/css/components.css" />
+  <link rel="stylesheet" href="./frontend/css/document-editor.css" />
+  <link rel="stylesheet" href="./css/main.css" />
+  <link rel="stylesheet" href="./css/layout.css" />
+  <link rel="stylesheet" href="./css/forms.css" />
+  <link rel="stylesheet" href="./css/components.css" />
+  <link rel="stylesheet" href="./css/document-editor.css" />
+</head>
+<body>
+
+  <!-- Top Executive Header -->
+  <header class="header">
+    <div class="header-container">
+      <div class="header-brand" id="header-brand">
+        <img src="./frontend/logo.png" onerror="this.onerror=null;this.src='./logo.png';" alt="Khanna Travels & Holidays" class="brand-logo-img" />
+        <div class="header-title-group">
+          <h1>KHANNA TRAVELS & HOLIDAYS</h1>
+          <p>Visa Document Automation System • Executive Portal</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button type="button" class="btn btn-secondary btn-sm" id="header-btn-dashboard">
+          Applications
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" id="header-btn-new">
+          + New Application
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 7-Step Progress Stepper -->
+  <div class="stepper-bar hidden" id="stepper-bar">
+    <div class="stepper-container" id="stepper-container">
+      <!-- Injected dynamically by App.renderStepper() -->
+    </div>
+  </div>
+
+  <!-- Dynamic Application Root -->
+  <main class="main-wrapper" id="app-root">
+    <!-- View rendered dynamically by App.renderView() -->
+  </main>
+
+  <!-- Modular Vanilla JS Entrypoint -->
+  <!-- Modular Vanilla JS Entrypoint with dual-path fallback -->
+  <script type="module">
+    import('./frontend/js/app.js').catch(() => import('./js/app.js'));
+  </script>
+</body>
+</html>

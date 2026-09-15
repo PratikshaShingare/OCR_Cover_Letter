@@ -38,6 +38,9 @@ jobs:
           if [ -d frontend/assets ]; then
             cp -r frontend/assets _site/assets
           fi
+          mkdir -p _site/frontend
+          cp -r frontend/* _site/frontend/
+          touch _site/.nojekyll
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
