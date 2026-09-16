@@ -59,6 +59,7 @@ class ApplicantFamily(BaseModel):
 
 
 class ApplicantContact(BaseModel):
+    countryCode: str = Field(default="+91", description="Country Calling Code")
     mobileNumber: str = Field(default="", description="Mobile Number")
     emailAddress: str = Field(default="", description="Email Address")
     alternateContact: str = Field(default="", description="Alternate Contact Number")
@@ -85,7 +86,7 @@ class ApplicantEmployment(BaseModel):
 
 class Traveller(BaseModel):
     id: str = Field(default="", description="Unique UUID for traveller")
-    title: str = Field(default="Mr.", description="Title: Mr., Mrs., Ms., Master")
+    title: str = Field(default="", description="Title: Mr., Mrs., Ms., Master, Dr.")
     givenName: str = Field(default="", description="Given Name")
     middleName: str = Field(default="", description="Middle Name")
     surname: str = Field(default="", description="Surname")
@@ -97,7 +98,7 @@ class Traveller(BaseModel):
     dob: str = Field(default="", description="Date of Birth")
     nationality: str = Field(default="", description="Nationality")
     gender: str = Field(default="", description="Gender")
-    relationship: str = Field(default="Spouse", description="Spouse, Son, Daughter, Father, Mother, Brother, Sister, Other")
+    relationship: str = Field(default="", description="Self, Spouse, Child, Parent, Sibling, Friend, Colleague, Other")
     occupation: str = Field(default="", description="Occupation e.g. Corporate Employee, Homemaker, Student")
     employer: str = Field(default="", description="Employer / Organization")
     schoolCollege: str = Field(default="", description="School / College")

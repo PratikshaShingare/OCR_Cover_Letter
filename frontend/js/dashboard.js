@@ -32,13 +32,21 @@ export const DashboardModule = {
 
         <!-- Real Applications Section -->
         <div class="card" style="padding: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--dark);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--dark); margin: 0;">
               Applications
             </h3>
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-apps" title="Refresh List">
-              ↻ Refresh
-            </button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-dash-export-all" title="Download 4-sheet Excel for all clients">
+                Export All Clients (.xlsx)
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-dash-admin" title="Admin Bulk Ingestion & Audit">
+                Admin &amp; Import
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-apps" title="Refresh List">
+                Refresh
+              </button>
+            </div>
           </div>
 
           <div id="apps-container">
@@ -113,7 +121,10 @@ export const DashboardModule = {
                 </td>
                 <td style="text-align: right;">
                   <button type="button" class="btn btn-secondary btn-sm btn-open-app" data-id="${a.id}" style="margin-right: 6px;">
-                    Open →
+                    Open
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm btn-export-client" data-id="${a.id}" data-name="${a.applicant_name || 'Client'}" title="Download 4-sheet client Excel" style="margin-right: 6px;">
+                    Export (.xlsx)
                   </button>
                   <button type="button" class="btn btn-secondary btn-sm btn-delete-app" data-id="${a.id}" style="color: var(--danger); border-color: #fca5a5;">
                     Delete
@@ -145,6 +156,24 @@ export const DashboardModule = {
           } catch (err) {
             alert(`Failed to open application: ${err.message}`);
             btn.disabled = false;
+          }
+        });
+      });
+
+      // Bind per-client multi-sheet Excel export
+      appsContainer.querySelectorAll('.btn-export-client').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = e.currentTarget.dataset.id;
+          const name = e.currentTarget.dataset.name;
+          btn.disabled = true;
+          btn.textContent = '...';
+          try {
+            await Api.downloadMultiSheetExport(id, name);
+          } catch (err) {
+            alert(`Export failed: ${err.message}`);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = 'Export (.xlsx)';
           }
         });
       });
@@ -215,6 +244,27 @@ export const DashboardModule = {
     const btnRefresh = container.querySelector('#btn-refresh-apps');
     if (btnRefresh) {
       btnRefresh.addEventListener('click', () => this.loadApplications(container));
+    }
+
+    const btnAdmin = container.querySelector('#btn-dash-admin');
+    if (btnAdmin) {
+      btnAdmin.addEventListener('click', () => State.setViewMode('admin'));
+    }
+
+    const btnExportAll = container.querySelector('#btn-dash-export-all');
+    if (btnExportAll) {
+      btnExportAll.addEventListener('click', async () => {
+        try {
+          btnExportAll.disabled = true;
+          btnExportAll.textContent = 'Generating...';
+          await Api.downloadAllClientsExport();
+        } catch (err) {
+          alert(`Export failed: ${err.message}`);
+        } finally {
+          btnExportAll.disabled = false;
+          btnExportAll.textContent = 'Export All Clients (.xlsx)';
+        }
+      });
     }
   }
 };

@@ -13,6 +13,7 @@ import { TravelModule } from './travel.js';
 import { TemplatesModule } from './templates.js';
 import { CoverLetterModule } from './cover-letter.js';
 import { ReviewModule } from './review.js';
+import { AdminPortalModule } from './admin-portal.js';
 
 const STEPS = [
   { step: 1, label: 'Passport' },
@@ -53,6 +54,16 @@ export const App = {
 
     if (btnDashboard) {
       btnDashboard.addEventListener('click', () => State.setViewMode('dashboard'));
+    }
+
+    const btnAdmin = document.getElementById('header-btn-admin');
+    if (btnAdmin) {
+      btnAdmin.addEventListener('click', () => State.setViewMode('admin'));
+    }
+
+    const footerBtnAdmin = document.getElementById('footer-btn-admin');
+    if (footerBtnAdmin) {
+      footerBtnAdmin.addEventListener('click', () => State.setViewMode('admin'));
     }
 
     const btnExcel = document.getElementById('header-btn-excel');
@@ -107,7 +118,7 @@ export const App = {
     const stepperBar = document.getElementById('stepper-bar');
     if (!stepperBar) return;
 
-    if (State.viewMode === 'dashboard') {
+    if (State.viewMode === 'dashboard' || State.viewMode === 'admin') {
       stepperBar.classList.add('hidden');
       return;
     }
@@ -133,6 +144,11 @@ export const App = {
 
     if (State.viewMode === 'dashboard') {
       DashboardModule.render(appRoot);
+      return;
+    }
+
+    if (State.viewMode === 'admin') {
+      AdminPortalModule.render(appRoot);
       return;
     }
 

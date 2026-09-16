@@ -20,6 +20,7 @@ COPY Singapore_covering_letter_template_clean.* ./
 COPY ["khanna travels logo.png", "./"]
 COPY logo.png ./logo.png
 COPY index.html ./index.html
+COPY 404.html ./404.html
 
 # Create data, uploads, and temp storage directories
 RUN mkdir -p data temp uploads internal_records

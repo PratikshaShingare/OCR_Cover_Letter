@@ -67,13 +67,13 @@ export const PassportModule = {
                   ${totalPages > 1 ? `
                     <div style="display: flex; align-items: center; gap: 4px; background-color: #1e293b; padding: 2px 6px; border-radius: 4px; margin-right: 6px;">
                       <button type="button" class="viewer-btn" id="btn-page-prev" title="Previous Page" ${currentPage <= 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>
-                        ◀
+                        Prev
                       </button>
                       <span style="font-size: 0.78rem; font-weight: 600; color: #e2e8f0; min-width: 65px; text-align: center;">
                         Page ${currentPage} / ${totalPages}
                       </span>
                       <button type="button" class="viewer-btn" id="btn-page-next" title="Next Page" ${currentPage >= totalPages ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>
-                        ▶
+                        Next
                       </button>
                     </div>
                   ` : ''}
@@ -104,6 +104,17 @@ export const PassportModule = {
                 </div>
               </div>
 
+              ${totalPages > 1 ? `
+                <div style="display: flex; gap: 8px; padding: 10px 14px; background: #0f172a; border-bottom: 1px solid #334155;">
+                  <button type="button" class="btn btn-sm ${currentPage === 1 ? 'btn-primary' : 'btn-secondary'}" id="btn-page-front" style="padding: 4px 12px; font-size: 0.78rem;">
+                    Passport Front (Biographical)
+                  </button>
+                  <button type="button" class="btn btn-sm ${currentPage === 2 ? 'btn-primary' : 'btn-secondary'}" id="btn-page-back" style="padding: 4px 12px; font-size: 0.78rem;">
+                    Passport Back (Address & Family)
+                  </button>
+                </div>
+              ` : ''}
+
               <div class="viewer-canvas" id="viewer-canvas">
                 <div class="viewer-content-wrapper" id="viewer-wrapper">
                   <img class="viewer-image" id="passport-preview-img" src="${previewUrl}" alt="Original Document" style="max-width: 100%; max-height: 480px; object-fit: contain; background-color: #ffffff; border-radius: 4px;" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\\'padding: 30px; text-align: center; color: #94a3b8; font-weight: 600;\\'>Preview loading or document unavailable. Click Open Original above to view.</div>';" />
@@ -130,9 +141,9 @@ export const PassportModule = {
               <div class="form-label-row">
                 <span class="form-label">Full Name</span>
                 ${app.personal?.fullName ? `
-                  <span class="status-badge badge-extracted">✓ Extracted from passport</span>
+                  <span class="status-badge badge-extracted">Extracted from passport</span>
                 ` : `
-                  <span class="status-badge badge-neutral">⚠ Not found — enter manually</span>
+                  <span class="status-badge badge-neutral">Not found — enter manually</span>
                 `}
               </div>
               <input type="text" class="form-control" value="${app.personal?.fullName || ''}" placeholder="Pending extraction or entry" readonly />
@@ -142,9 +153,9 @@ export const PassportModule = {
               <div class="form-label-row">
                 <span class="form-label">Passport Number</span>
                 ${app.passport?.passportNumber ? `
-                  <span class="status-badge badge-extracted">✓ Extracted from passport</span>
+                  <span class="status-badge badge-extracted">Extracted from passport</span>
                 ` : `
-                  <span class="status-badge badge-neutral">⚠ Not found — enter manually</span>
+                  <span class="status-badge badge-neutral">Not found — enter manually</span>
                 `}
               </div>
               <input type="text" class="form-control" value="${app.passport?.passportNumber || ''}" placeholder="Pending extraction or entry" readonly />
@@ -154,9 +165,9 @@ export const PassportModule = {
               <div class="form-label-row">
                 <span class="form-label">Date of Birth</span>
                 ${app.personal?.dob ? `
-                  <span class="status-badge badge-extracted">✓ Extracted from passport</span>
+                  <span class="status-badge badge-extracted">Extracted from passport</span>
                 ` : `
-                  <span class="status-badge badge-neutral">⚠ Not found — enter manually</span>
+                  <span class="status-badge badge-neutral">Not found — enter manually</span>
                 `}
               </div>
               <input type="text" class="form-control" value="${app.personal?.dob || ''}" placeholder="YYYY-MM-DD" readonly />
@@ -166,9 +177,9 @@ export const PassportModule = {
               <div class="form-label-row">
                 <span class="form-label">Date of Expiry</span>
                 ${app.passport?.expiryDate ? `
-                  <span class="status-badge badge-extracted">✓ Extracted from passport</span>
+                  <span class="status-badge badge-extracted">Extracted from passport</span>
                 ` : `
-                  <span class="status-badge badge-neutral">⚠ Not found — enter manually</span>
+                  <span class="status-badge badge-neutral">Not found — enter manually</span>
                 `}
               </div>
               <input type="text" class="form-control" value="${app.passport?.expiryDate || ''}" placeholder="YYYY-MM-DD" readonly />
@@ -178,9 +189,9 @@ export const PassportModule = {
               <div class="form-label-row">
                 <span class="form-label">Place of Issue</span>
                 ${app.passport?.issuePlace ? `
-                  <span class="status-badge badge-extracted">✓ Extracted from passport</span>
+                  <span class="status-badge badge-extracted">Extracted from passport</span>
                 ` : `
-                  <span class="status-badge badge-neutral">⚠ Not found — enter manually</span>
+                  <span class="status-badge badge-neutral">Not found — enter manually</span>
                 `}
               </div>
               <input type="text" class="form-control" value="${app.passport?.issuePlace || ''}" placeholder="Pending extraction" readonly />
@@ -190,9 +201,9 @@ export const PassportModule = {
               <div class="form-label-row">
                 <span class="form-label">Place of Birth</span>
                 ${app.personal?.placeOfBirth ? `
-                  <span class="status-badge badge-extracted">✓ Extracted from passport</span>
+                  <span class="status-badge badge-extracted">Extracted from passport</span>
                 ` : `
-                  <span class="status-badge badge-neutral">⚠ Not found — enter manually</span>
+                  <span class="status-badge badge-neutral">Not found — enter manually</span>
                 `}
               </div>
               <input type="text" class="form-control" value="${app.personal?.placeOfBirth || ''}" placeholder="Pending extraction" readonly />
@@ -210,10 +221,10 @@ export const PassportModule = {
         <!-- Navigation Buttons -->
         <div class="step-nav-bar">
           <button type="button" class="btn btn-secondary" id="btn-back-dashboard">
-            ← Back to Applications
+            Back to Applications
           </button>
           <button type="button" class="btn btn-primary" id="btn-proceed-applicant">
-            Proceed to Applicant Verification →
+            Proceed to Applicant Verification
           </button>
         </div>
       </div>
@@ -234,22 +245,45 @@ export const PassportModule = {
       if (!file) return;
       const statusEl = container.querySelector('#upload-status');
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color: var(--primary); font-weight: 600;">Processing passport document and running OCR extraction... Please wait.</span>`;
+        statusEl.innerHTML = `<span style="color: var(--primary); font-weight: 600;">Uploading document & generating high-resolution preview...</span>`;
       }
 
       try {
-        const res = await Api.uploadPassport(app.applicationId, file);
-        const totalPages = res.fileInfo.totalPages || 1;
-        State.setPassportFileStatus(true, res.fileInfo.isPdf ? 'pdf' : 'image', totalPages);
-        State.setApplication(res.application);
+        // Step 1: Fast upload & instant preview generation (< 0.5s)
+        const uploadRes = await Api.uploadPassportFast(app.applicationId, file);
+        const totalPages = uploadRes.fileInfo.totalPages || 1;
+        State.setPassportFileStatus(true, uploadRes.fileInfo.isPdf ? 'pdf' : 'image', totalPages);
+        State.setApplication(uploadRes.application);
         this.render(container);
+
+        // Step 2: Show immediate active status and run OCR extraction
+        const activeStatusEl = container.querySelector('#upload-status');
+        if (activeStatusEl) {
+          activeStatusEl.innerHTML = `<span style="color: var(--primary); font-weight: 600;">Document preview ready. Running OCR extraction... Please wait.</span>`;
+        }
+
+        try {
+          const ocrRes = await Api.extractPassportOcr(app.applicationId);
+          State.setApplication(ocrRes.application);
+          this.render(container);
+          const finalStatus = container.querySelector('#upload-status');
+          if (finalStatus) {
+            finalStatus.innerHTML = `<span style="color: #166534; font-weight: 600;">Extraction completed. Master Client Data synchronized.</span>`;
+          }
+        } catch (ocrErr) {
+          console.warn('OCR extraction notice:', ocrErr);
+          const finalStatus = container.querySelector('#upload-status');
+          if (finalStatus) {
+            finalStatus.innerHTML = `<span style="color: #b45309; font-weight: 600;">Document preview loaded. You can verify and edit fields in Step 2.</span>`;
+          }
+        }
+
       } catch (err) {
         if (statusEl) {
           statusEl.innerHTML = `<span style="color: var(--danger);">Upload error: ${err.message}</span>`;
         }
       }
     };
-
 
 
     if (fileInput) {
@@ -276,6 +310,24 @@ export const PassportModule = {
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
           handleUpload(e.dataTransfer.files[0]);
         }
+      });
+    }
+
+    // Front / Back Page Direct Tabs
+    const btnPageFront = container.querySelector('#btn-page-front');
+    const btnPageBack = container.querySelector('#btn-page-back');
+
+    if (btnPageFront) {
+      btnPageFront.addEventListener('click', () => {
+        State.setPassportCurrentPage(1);
+        this.render(container);
+      });
+    }
+
+    if (btnPageBack) {
+      btnPageBack.addEventListener('click', () => {
+        State.setPassportCurrentPage(2);
+        this.render(container);
       });
     }
 

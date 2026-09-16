@@ -211,6 +211,71 @@ export const Api = {
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
+  },
+
+  async downloadMultiSheetExport(appId, applicantName = 'Client') {
+    const res = await fetch(`${API_BASE}/excel/export-multi-sheet/${appId}`);
+    if (!res.ok) throw new Error('Failed to download client multi-sheet export');
+    const blob = await res.blob();
+    const cleanName = (applicantName || 'Client').replace(/\s+/g, '_');
+    const filename = `Khanna_Travels_${cleanName}_Export.xlsx`;
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  async downloadAllClientsExport() {
+    const res = await fetch(`${API_BASE}/excel/export-all`);
+    if (!res.ok) throw new Error('Failed to download executive clients export');
+    const blob = await res.blob();
+    const filename = `Khanna_Travels_All_Clients_Export.xlsx`;
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  // Admin Bulk Import & Audit
+  async uploadBulkImportFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/admin/import/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Upload failed' }));
+      throw new Error(err.detail || 'Import file upload failed');
+    }
+    return res.json();
+  },
+
+  async executeBulkImport(payload) {
+    const res = await fetch(`${API_BASE}/admin/import/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Execution failed' }));
+      throw new Error(err.detail || 'Bulk import execution failed');
+    }
+    return res.json();
+  },
+
+  async getImportHistory() {
+    const res = await fetch(`${API_BASE}/admin/import/history`);
+    if (!res.ok) throw new Error('Failed to fetch import history');
+    return res.json();
   }
 };
 

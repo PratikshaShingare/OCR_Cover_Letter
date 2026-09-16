@@ -14,6 +14,7 @@ from .api.applications import router as applications_router
 from .api.templates import router as templates_router
 from .api.documents import router as documents_router
 from .api.excel import router as excel_router
+from .api.admin_import import router as admin_import_router
 from .services.storage import init_db
 
 app = FastAPI(
@@ -49,6 +50,7 @@ app.include_router(applications_router)
 app.include_router(templates_router)
 app.include_router(documents_router)
 app.include_router(excel_router)
+app.include_router(admin_import_router)
 
 
 

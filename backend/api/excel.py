@@ -61,3 +61,51 @@ async def import_and_diff(
         return diff_result
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to inspect Excel file: {str(e)}")
+
+
+@router.get("/export-multi-sheet/{app_id}")
+async def export_single_application_multi_sheet(app_id: str):
+    """
+    Exports a single application as an executive 4-sheet Excel workbook.
+    """
+    from ..services.storage import get_application
+    from ..services.multi_sheet_excel import export_applications_to_bytes
+    from fastapi.responses import Response
+
+    app = get_application(app_id)
+    if not app:
+        raise HTTPException(status_code=404, detail=f"Application {app_id} not found.")
+
+    excel_buf = export_applications_to_bytes([app])
+    filename = f"Khanna_Travels_Client_Export_{app_id}.xlsx"
+    return Response(
+        content=excel_buf.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@router.get("/export-all")
+async def export_all_applications_multi_sheet():
+    """
+    Exports all applications across all clients as an executive 4-sheet Excel workbook.
+    """
+    from ..services.storage import list_applications, get_application
+    from ..services.multi_sheet_excel import export_applications_to_bytes
+    from fastapi.responses import Response
+
+    all_apps_meta = list_applications()
+    apps = []
+    for m in all_apps_meta:
+        single = get_application(m["id"])
+        if single:
+            apps.append(single)
+
+    excel_buf = export_applications_to_bytes(apps)
+    filename = "Khanna_Travels_All_Clients_Export.xlsx"
+    return Response(
+        content=excel_buf.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+

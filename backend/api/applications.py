@@ -108,35 +108,45 @@ def get_empty_preview_svg(label: str = "Document Preview") -> str:
 </svg>"""
 
 
-def render_passport_previews(saved_path: str, ext: str, passport_dir: str) -> int:
+def render_passport_previews(saved_path: str, ext: str, passport_dir: str):
     """
-    Renders high-resolution PNG previews instantly (< 0.1s).
-    Guarantees proper horizontal passport layout (width >= height).
+    Renders high-resolution normalized previews instantly using passport_normalizer.
+    Provides memory-safe scaling, orientation correction, and margin trimming.
     """
+    from ..services.passport_normalizer import normalize_pdf_document, normalize_passport_image
+    pages_meta = []
     total_pages = 1
     if ext == ".pdf":
         try:
-            import pypdfium2 as pdfium
-            doc = pdfium.PdfDocument(saved_path)
-            total_pages = len(doc)
-            for i in range(min(total_pages, 10)):
-                raw_img = doc[i].render(scale=2.0).to_pil()
-                if raw_img.height > raw_img.width:
-                    raw_img = raw_img.rotate(270, expand=True)
-                raw_img.save(os.path.join(passport_dir, f"preview_page_{i + 1}.png"), "PNG")
+            norm_res = normalize_pdf_document(saved_path, passport_dir, max_pages=4)
+            total_pages = norm_res.get("totalPages", 1)
+            pages_meta = norm_res.get("pages", [])
         except Exception as render_err:
             print(f"PDF preview rendering notice: {render_err}")
     else:
         try:
             from PIL import Image
-            img = Image.open(saved_path).convert("RGB")
-            if img.height > img.width:
-                img = img.rotate(270, expand=True)
-            img.save(os.path.join(passport_dir, "preview_page_1.png"), "PNG")
+            img = Image.open(saved_path)
+            norm_img = normalize_passport_image(img)
+            out_p = os.path.join(passport_dir, "preview_page_1.png")
+            norm_img.save(out_p, "PNG", optimize=True)
+            pages_meta.append({
+                "page": 1,
+                "label": "Passport Front (Biographical)",
+                "width": norm_img.width,
+                "height": norm_img.height,
+                "url": "preview_page_1.png"
+            })
         except Exception:
             shutil.copy(saved_path, os.path.join(passport_dir, "preview_page_1.png"))
-    return total_pages
-
+            pages_meta.append({
+                "page": 1,
+                "label": "Passport Document",
+                "width": 800,
+                "height": 600,
+                "url": "preview_page_1.png"
+            })
+    return total_pages, pages_meta
 
 
 def apply_extracted_data_to_application(app: MasterApplicationData, extracted: Any) -> MasterApplicationData:
@@ -179,19 +189,18 @@ def apply_extracted_data_to_application(app: MasterApplicationData, extracted: A
         app.family.spouseFullName = extracted.spouseFullName
     if getattr(extracted, "address", None) and extracted.address:
         app.address.currentResidentialAddress = extracted.address
-        if not app.address.addressLine1:
-            parts = [p.strip() for p in extracted.address.split(',') if p.strip() and not re.fullmatch(r'[A-Za-z0-9]{7,9}', p.strip())]
-            if parts:
-                app.address.addressLine1 = parts[0]
-            if len(parts) > 1:
-                app.address.addressLine2 = ', '.join(parts[1:3])
-            pin_m = re.search(r'\b(4[0-9]{5})\b', extracted.address)
-            if pin_m and not app.address.postalCode:
-                app.address.postalCode = pin_m.group(1)
-            for city in ['Mumbai', 'Navi Mumbai', 'Thane', 'Pune', 'Delhi']:
-                if city.lower() in extracted.address.lower() and not app.address.city:
-                    app.address.city = city
-                    break
+    if getattr(extracted, "addressLine1", None) and extracted.addressLine1:
+        app.address.addressLine1 = extracted.addressLine1
+    if getattr(extracted, "addressLine2", None) and extracted.addressLine2:
+        app.address.addressLine2 = extracted.addressLine2
+    if getattr(extracted, "city", None) and extracted.city:
+        app.address.city = extracted.city
+    if getattr(extracted, "state", None) and extracted.state:
+        app.address.state = extracted.state
+    if getattr(extracted, "postalCode", None) and extracted.postalCode:
+        app.address.postalCode = extracted.postalCode
+    if getattr(extracted, "country", None) and extracted.country:
+        app.address.country = extracted.country
     if getattr(extracted, "email", None) and extracted.email and not app.contact.emailAddress:
         app.contact.emailAddress = extracted.email
     if getattr(extracted, "phone", None) and extracted.phone and not app.contact.mobileNumber:
@@ -274,7 +283,7 @@ async def upload_application_passport(
         f.write(content)
 
     # Pre-render high-resolution PNG preview images instantly (< 0.1s)
-    total_pages = render_passport_previews(saved_path, ext, passport_dir)
+    total_pages, pages_meta = render_passport_previews(saved_path, ext, passport_dir)
 
     file_info = {
         "filename": filename,
@@ -282,6 +291,7 @@ async def upload_application_passport(
         "contentType": file.content_type,
         "isPdf": ext == ".pdf",
         "totalPages": total_pages,
+        "pages": pages_meta,
         "previewUrl": f"/api/applications/{app_id}/passport-preview?page=1"
     }
 
@@ -377,22 +387,19 @@ async def get_application_passport_preview(app_id: str, page: int = 1):
             headers={"Content-Disposition": "inline", "Cache-Control": "no-cache"}
         )
 
+    # Dynamic on-demand rendering if preview file does not yet exist
     pdf_path = os.path.join(passport_dir, "passport.pdf")
     if os.path.exists(pdf_path):
         try:
-            import pypdfium2 as pdfium
-            doc = pdfium.PdfDocument(pdf_path)
-            target_idx = max(0, min(page - 1, len(doc) - 1))
-            page_img = doc[target_idx].render(scale=2.0).to_pil()
-            if page_img.height > page_img.width:
-                page_img = page_img.rotate(270, expand=True)
-            page_img.save(preview_file, "PNG")
-            return FileResponse(
-                path=preview_file,
-                media_type="image/png",
-                content_disposition_type="inline",
-                headers={"Content-Disposition": "inline", "Cache-Control": "no-cache"}
-            )
+            from ..services.passport_normalizer import normalize_pdf_document
+            normalize_pdf_document(pdf_path, passport_dir)
+            if os.path.exists(preview_file):
+                return FileResponse(
+                    path=preview_file,
+                    media_type="image/png",
+                    content_disposition_type="inline",
+                    headers={"Content-Disposition": "inline", "Cache-Control": "no-cache"}
+                )
         except Exception as render_err:
             print(f"[Preview] On-demand render notice: {render_err}")
 
@@ -406,11 +413,19 @@ async def get_application_passport_preview(app_id: str, page: int = 1):
             headers={"Content-Disposition": "inline", "Cache-Control": "no-cache"}
         )
 
-    # Fallback to original image if uploaded as image
+    # Fallback to original image if uploaded as image with proper content type
     orig_files = [f for f in os.listdir(passport_dir) if not f.startswith("preview_page_")]
     if orig_files:
         orig_path = os.path.join(passport_dir, orig_files[0])
-        if orig_path.lower().endswith((".jpg", ".jpeg", ".png")):
+        ext_lower = os.path.splitext(orig_path)[1].lower()
+        if ext_lower in (".jpg", ".jpeg"):
+            return FileResponse(
+                path=orig_path,
+                media_type="image/jpeg",
+                content_disposition_type="inline",
+                headers={"Content-Disposition": "inline", "Cache-Control": "no-cache"}
+            )
+        elif ext_lower == ".png":
             return FileResponse(
                 path=orig_path,
                 media_type="image/png",
@@ -424,26 +439,44 @@ async def get_application_passport_preview(app_id: str, page: int = 1):
 @router.get("/{app_id}/passport-info")
 async def get_application_passport_info(app_id: str):
     """
-    Returns presence, file format, and page count of the uploaded passport.
+    Returns presence, file format, page count, and labeled pages of the uploaded passport.
     """
     passport_dir = os.path.join(STORAGE_BASE, app_id, "passport")
     if not os.path.exists(passport_dir):
-        return {"hasPassport": False, "totalPages": 0, "isPdf": False}
+        return {"hasPassport": False, "totalPages": 0, "isPdf": False, "pages": []}
         
     orig_files = [f for f in os.listdir(passport_dir) if not f.startswith("preview_page_")]
     if not orig_files:
-        return {"hasPassport": False, "totalPages": 0, "isPdf": False}
+        return {"hasPassport": False, "totalPages": 0, "isPdf": False, "pages": []}
         
     orig = orig_files[0]
     is_pdf = orig.lower().endswith(".pdf")
-    preview_pages = [f for f in os.listdir(passport_dir) if f.startswith("preview_page_")]
-    total_pages = len(preview_pages) if preview_pages else 1
+    
+    preview_pages = sorted([f for f in os.listdir(passport_dir) if f.startswith("preview_page_") and f.endswith(".png")])
+    pages = []
+    for f in preview_pages:
+        m = re.search(r"preview_page_(\d+)\.png", f)
+        if m:
+            p_num = int(m.group(1))
+            lbl = "Passport Front (Biographical)" if p_num == 1 else ("Passport Back (Address & Family)" if p_num == 2 else f"Page {p_num}")
+            pages.append({
+                "page": p_num,
+                "label": lbl,
+                "url": f"/api/applications/{app_id}/passport-preview?page={p_num}"
+            })
+    if not pages:
+        pages.append({
+            "page": 1,
+            "label": "Passport Document",
+            "url": f"/api/applications/{app_id}/passport-preview?page=1"
+        })
     
     return {
         "hasPassport": True,
         "filename": orig,
         "isPdf": is_pdf,
-        "totalPages": total_pages,
+        "totalPages": len(pages),
+        "pages": pages,
         "previewUrl": f"/api/applications/{app_id}/passport-preview?page=1"
     }
 

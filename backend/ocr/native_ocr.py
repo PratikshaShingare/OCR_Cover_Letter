@@ -55,27 +55,14 @@ def run_linux_ocr(image_path: str, psm: int = 3) -> str:
         print(f"[OCR] Tesseract binary not found at {tesseract_bin}")
         return ""
 
-    env = os.environ.copy()
-    env["OMP_THREAD_LIMIT"] = "1"
-    env["OPENBLAS_NUM_THREADS"] = "1"
-    env["MKL_NUM_THREADS"] = "1"
-
     try:
         proc = subprocess.run(
-            [
-                tesseract_bin,
-                os.path.abspath(image_path),
-                "stdout",
-                "-l", "eng",
-                "--psm", str(psm),
-                "-c", "tessedit_do_invert=0",
-            ],
+            [tesseract_bin, os.path.abspath(image_path), "stdout", "-l", "eng", "--psm", str(psm)],
             capture_output=True,
             text=True,
             encoding="utf-8",
             errors="replace",
-            env=env,
-            timeout=12
+            timeout=30
         )
         if proc.returncode == 0 and proc.stdout:
             return proc.stdout.strip()

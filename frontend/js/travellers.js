@@ -1,6 +1,7 @@
 /**
  * Khanna Travels & Holidays — Travellers & Companions Module
  * Dynamically manages accompanying family members and co-passengers.
+ * Creates blank unassigned travellers with comprehensive relationships and date pickers.
  */
 
 import { Api } from './api.js';
@@ -61,7 +62,7 @@ export const TravellersModule = {
             <div class="card traveller-card" data-index="${idx}" style="margin-bottom: 16px; position: relative;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
                 <div style="font-weight: 700; font-size: 0.94rem; color: var(--dark);">
-                  Traveller ${idx + 2}: ${t.fullName || t.relationship || 'Companion'}
+                  Traveller ${idx + 2}: ${t.fullName || (t.relationship ? t.relationship : 'New Accompanying Traveller')}
                 </div>
                 <button type="button" class="btn btn-danger btn-sm btn-remove-traveller" data-index="${idx}">
                   Remove
@@ -70,15 +71,16 @@ export const TravellersModule = {
 
               <div class="form-grid">
                 <div class="form-group">
-                  <label class="form-label">Relationship</label>
+                  <label class="form-label">Relationship to Applicant</label>
                   <select class="form-control t-field" data-field="relationship" data-index="${idx}">
-                    <option value="Spouse" ${t.relationship === 'Spouse' ? 'selected' : ''}>Spouse / Wife / Husband</option>
-                    <option value="Son" ${t.relationship === 'Son' ? 'selected' : ''}>Son</option>
-                    <option value="Daughter" ${t.relationship === 'Daughter' ? 'selected' : ''}>Daughter</option>
-                    <option value="Father" ${t.relationship === 'Father' ? 'selected' : ''}>Father</option>
-                    <option value="Mother" ${t.relationship === 'Mother' ? 'selected' : ''}>Mother</option>
-                    <option value="Brother" ${t.relationship === 'Brother' ? 'selected' : ''}>Brother</option>
-                    <option value="Sister" ${t.relationship === 'Sister' ? 'selected' : ''}>Sister</option>
+                    <option value="" ${!t.relationship ? 'selected' : ''}>-- Select Relationship --</option>
+                    <option value="Self" ${t.relationship === 'Self' ? 'selected' : ''}>Self</option>
+                    <option value="Spouse" ${t.relationship === 'Spouse' ? 'selected' : ''}>Spouse</option>
+                    <option value="Child" ${t.relationship === 'Child' ? 'selected' : ''}>Child</option>
+                    <option value="Parent" ${t.relationship === 'Parent' ? 'selected' : ''}>Parent</option>
+                    <option value="Sibling" ${t.relationship === 'Sibling' ? 'selected' : ''}>Sibling</option>
+                    <option value="Friend" ${t.relationship === 'Friend' ? 'selected' : ''}>Friend</option>
+                    <option value="Colleague" ${t.relationship === 'Colleague' ? 'selected' : ''}>Colleague</option>
                     <option value="Other" ${t.relationship === 'Other' ? 'selected' : ''}>Other</option>
                   </select>
                 </div>
@@ -86,15 +88,17 @@ export const TravellersModule = {
                 <div class="form-group">
                   <label class="form-label">Title</label>
                   <select class="form-control t-field" data-field="title" data-index="${idx}">
+                    <option value="" ${!t.title ? 'selected' : ''}>-- Select Title --</option>
                     <option value="Mr." ${t.title === 'Mr.' ? 'selected' : ''}>Mr.</option>
                     <option value="Mrs." ${t.title === 'Mrs.' ? 'selected' : ''}>Mrs.</option>
                     <option value="Ms." ${t.title === 'Ms.' ? 'selected' : ''}>Ms.</option>
                     <option value="Master" ${t.title === 'Master' ? 'selected' : ''}>Master</option>
+                    <option value="Dr." ${t.title === 'Dr.' ? 'selected' : ''}>Dr.</option>
                   </select>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Full Name</label>
+                  <label class="form-label">Full Name (as in Passport)</label>
                   <input type="text" class="form-control t-field" data-field="fullName" data-index="${idx}" value="${t.fullName || ''}" placeholder="Full Name as in Passport" />
                 </div>
 
@@ -104,13 +108,28 @@ export const TravellersModule = {
                 </div>
 
                 <div class="form-group">
+                  <label class="form-label">Gender</label>
+                  <select class="form-control t-field" data-field="gender" data-index="${idx}">
+                    <option value="" ${!t.gender ? 'selected' : ''}>-- Select Gender --</option>
+                    <option value="Male" ${t.gender === 'Male' ? 'selected' : ''}>Male</option>
+                    <option value="Female" ${t.gender === 'Female' ? 'selected' : ''}>Female</option>
+                    <option value="Other" ${t.gender === 'Other' ? 'selected' : ''}>Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
                   <label class="form-label">Date of Birth</label>
-                  <input type="text" class="form-control t-field" data-field="dob" data-index="${idx}" value="${t.dob || ''}" placeholder="YYYY-MM-DD" />
+                  <input type="date" class="form-control t-field" data-field="dob" data-index="${idx}" value="${t.dob || ''}" />
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Passport Issue Date</label>
-                  <input type="text" class="form-control t-field" data-field="issueDate" data-index="${idx}" value="${t.issueDate || ''}" placeholder="YYYY-MM-DD" />
+                  <input type="date" class="form-control t-field" data-field="issueDate" data-index="${idx}" value="${t.issueDate || ''}" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Passport Expiry Date</label>
+                  <input type="date" class="form-control t-field" data-field="expiryDate" data-index="${idx}" value="${t.expiryDate || ''}" />
                 </div>
 
                 <div class="form-group">
@@ -119,8 +138,13 @@ export const TravellersModule = {
                 </div>
 
                 <div class="form-group">
+                  <label class="form-label">Nationality</label>
+                  <input type="text" class="form-control t-field" data-field="nationality" data-index="${idx}" value="${t.nationality || 'Indian'}" placeholder="Nationality" />
+                </div>
+
+                <div class="form-group">
                   <label class="form-label">Occupation / Role</label>
-                  <input type="text" class="form-control t-field" data-field="occupation" data-index="${idx}" value="${t.occupation || ''}" placeholder="e.g. Homemaker, Student, Architect" />
+                  <input type="text" class="form-control t-field" data-field="occupation" data-index="${idx}" value="${t.occupation || ''}" placeholder="e.g. Architect, Student, Homemaker" />
                 </div>
 
                 <div class="form-group">
@@ -145,10 +169,10 @@ export const TravellersModule = {
         <!-- Navigation Buttons -->
         <div class="step-nav-bar">
           <button type="button" class="btn btn-secondary" id="btn-back-applicant">
-            ← Back to Applicant
+            Back to Applicant
           </button>
           <button type="button" class="btn btn-primary" id="btn-save-travellers">
-            Save & Continue to Travel Details →
+            Save & Continue to Travel Details
           </button>
         </div>
       </div>
@@ -164,7 +188,7 @@ export const TravellersModule = {
       if (!app.travellers) app.travellers = [];
       app.travellers.push({
         id: `T-${Date.now()}`,
-        title: 'Mrs.',
+        title: '',
         givenName: '',
         middleName: '',
         surname: '',
@@ -175,9 +199,9 @@ export const TravellersModule = {
         issuePlace: '',
         dob: '',
         nationality: 'Indian',
-        gender: 'Female',
-        relationship: 'Spouse',
-        occupation: 'Homemaker',
+        gender: '',
+        relationship: '',
+        occupation: '',
         employer: '',
         schoolCollege: '',
         gradeClass: '',
@@ -194,20 +218,15 @@ export const TravellersModule = {
 
     // Live binding for traveller inputs
     container.querySelectorAll('.t-field').forEach(input => {
-      input.addEventListener('input', (e) => {
+      const updateField = (e) => {
         const idx = parseInt(e.target.dataset.index, 10);
         const field = e.target.dataset.field;
         if (app.travellers && app.travellers[idx]) {
           app.travellers[idx][field] = e.target.value.trim();
         }
-      });
-      input.addEventListener('change', (e) => {
-        const idx = parseInt(e.target.dataset.index, 10);
-        const field = e.target.dataset.field;
-        if (app.travellers && app.travellers[idx]) {
-          app.travellers[idx][field] = e.target.value.trim();
-        }
-      });
+      };
+      input.addEventListener('input', updateField);
+      input.addEventListener('change', updateField);
     });
 
     // Remove traveller button

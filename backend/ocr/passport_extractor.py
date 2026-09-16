@@ -88,6 +88,60 @@ def clean_name(name: str) -> str:
     return " ".join(name.split()).strip()
 
 
+def parse_structured_address(raw_addr: str) -> Dict[str, str]:
+    """
+    Parses a multi-line or comma-separated Indian/international passport address into
+    discrete fields: addressLine1, addressLine2, city, state, postalCode, country.
+    """
+    res = {
+        "addressLine1": "",
+        "addressLine2": "",
+        "city": "",
+        "state": "",
+        "postalCode": "",
+        "country": "India"
+    }
+    if not raw_addr:
+        return res
+
+    clean = raw_addr.replace("\n", ", ")
+
+    # 1. Postal code (PIN)
+    pin_m = re.search(r'\b([1-9][0-9]{5})\b', clean)
+    if pin_m:
+        res["postalCode"] = pin_m.group(1)
+        clean = clean.replace(pin_m.group(0), "")
+
+    # 2. State
+    for st in INDIAN_STATES:
+        if re.search(rf'\b{st}\b', clean, re.I):
+            res["state"] = st.title()
+            clean = re.sub(rf'\b{st}\b', '', clean, flags=re.I)
+            break
+
+    # 3. City
+    for ct in INDIAN_CITIES:
+        if re.search(rf'\b{ct}\b', clean, re.I):
+            res["city"] = ct.title()
+            clean = re.sub(rf'\b{ct}\b', '', clean, flags=re.I)
+            break
+
+    # 4. Clean leftover commas and labels
+    tokens = [t.strip() for t in clean.split(",") if t.strip() and not re.fullmatch(r'[A-Za-z0-9]{7,9}', t.strip())]
+    filtered = []
+    for t in tokens:
+        if re.fullmatch(r'(?:PIN|PINCODE|STATE|DIST|DISTRICT|TEL|MOB|PH)[\s:]*', t, re.I):
+            continue
+        filtered.append(t)
+
+    if len(filtered) >= 1:
+        res["addressLine1"] = filtered[0]
+    if len(filtered) >= 2:
+        res["addressLine2"] = ", ".join(filtered[1:])
+
+    return res
+
+
 def extract_travellers_from_text(text: str, main_passport: str = "") -> List[Dict[str, Any]]:
     """Extracts co-travellers from declaration paragraphs or passenger tables."""
     travellers = []
@@ -167,7 +221,7 @@ def extract_document_data(text: str, filename: str = "") -> Dict[str, Any]:
         "middleName": "",
         "surname": "",
         "fullName": "",
-        "title": "Mr.",
+        "title": "",
         "nationality": "Indian",
         "dob": "",
         "gender": "",
@@ -183,6 +237,12 @@ def extract_document_data(text: str, filename: str = "") -> Dict[str, Any]:
         "motherFullName": "",
         "spouseFullName": "",
         "address": "",
+        "addressLine1": "",
+        "addressLine2": "",
+        "city": "",
+        "state": "",
+        "postalCode": "",
+        "country": "India",
         "travellers": [],
         "fieldDetails": {},
         "fieldStatuses": {}
@@ -467,10 +527,31 @@ def extract_document_data(text: str, filename: str = "") -> Dict[str, Any]:
     data["travellers"] = extract_travellers_from_text(text, main_passport=data["passportNumber"])
 
     # -------------------------------------------------------------
-    # 10. Structured Field Details & Statuses
+    # 10. Title Inference & Structured Address Decomposition
+    # -------------------------------------------------------------
+    if not data.get("title"):
+        if data.get("gender") == "Male":
+            data["title"] = "Mr."
+        elif data.get("gender") == "Female":
+            data["title"] = "Mrs." if data.get("spouseFullName") else "Ms."
+        else:
+            data["title"] = ""
+
+    # Parse structured address
+    addr_struct = parse_structured_address(data.get("address", ""))
+    data["addressLine1"] = addr_struct["addressLine1"]
+    data["addressLine2"] = addr_struct["addressLine2"]
+    data["city"] = addr_struct["city"]
+    data["state"] = addr_struct["state"]
+    data["postalCode"] = addr_struct["postalCode"]
+    data["country"] = addr_struct["country"]
+
+    # -------------------------------------------------------------
+    # 11. Structured Field Details & Statuses
     # -------------------------------------------------------------
     fields_to_track = [
         ("passport.passportNumber", data["passportNumber"]),
+        ("personal.title", data["title"]),
         ("personal.fullName", data["fullName"]),
         ("personal.givenName", data["givenName"]),
         ("personal.surname", data["surname"]),
@@ -486,6 +567,12 @@ def extract_document_data(text: str, filename: str = "") -> Dict[str, Any]:
         ("family.motherFullName", data["motherFullName"]),
         ("family.spouseFullName", data["spouseFullName"]),
         ("address.currentResidentialAddress", data["address"]),
+        ("address.addressLine1", data["addressLine1"]),
+        ("address.addressLine2", data["addressLine2"]),
+        ("address.city", data["city"]),
+        ("address.state", data["state"]),
+        ("address.postalCode", data["postalCode"]),
+        ("address.country", data["country"]),
     ]
 
     for field_path, val in fields_to_track:

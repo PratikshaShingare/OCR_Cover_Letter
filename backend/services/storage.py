@@ -28,6 +28,7 @@ def init_db():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS applications (
         id TEXT PRIMARY KEY,
+        user_id TEXT DEFAULT 'admin',
         applicant_name TEXT,
         passport_number TEXT,
         destination_country TEXT,
@@ -38,6 +39,45 @@ def init_db():
         data_json TEXT
     )
     """)
+    # Ensure user_id column exists if table existed previously without it
+    try:
+        cursor.execute("ALTER TABLE applications ADD COLUMN user_id TEXT DEFAULT 'admin'")
+    except Exception:
+        pass
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        full_name TEXT,
+        role TEXT NOT NULL DEFAULT 'user',
+        created_at TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS import_history (
+        id TEXT PRIMARY KEY,
+        filename TEXT NOT NULL,
+        imported_count INTEGER DEFAULT 0,
+        updated_count INTEGER DEFAULT 0,
+        skipped_count INTEGER DEFAULT 0,
+        errors_count INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'Completed',
+        created_at TEXT
+    )
+    """)
+
+    # Seed default admin user
+    cursor.execute("SELECT id FROM users WHERE email = 'admin@khannatravels.com'")
+    if not cursor.fetchone():
+        now_str = datetime.now().isoformat()
+        cursor.execute("""
+            INSERT INTO users (id, email, password_hash, full_name, role, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, ("USR-ADMIN-01", "admin@khannatravels.com", "admin123", "Khanna Administrator", "admin", now_str))
+
     conn.commit()
     conn.close()
 
@@ -60,7 +100,7 @@ def generate_next_application_id() -> str:
     return f"APP-{year}-{max_seq + 1:05d}"
 
 
-def save_application(app_data: MasterApplicationData) -> MasterApplicationData:
+def save_application(app_data: MasterApplicationData, user_id: str = "admin") -> MasterApplicationData:
     if not app_data.applicationId:
         app_data.applicationId = generate_next_application_id()
         
@@ -78,9 +118,10 @@ def save_application(app_data: MasterApplicationData) -> MasterApplicationData:
     data_json = app_data.model_dump_json()
     
     cursor.execute("""
-    INSERT INTO applications (id, applicant_name, passport_number, destination_country, visa_type, status, created_at, updated_at, data_json)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO applications (id, user_id, applicant_name, passport_number, destination_country, visa_type, status, created_at, updated_at, data_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
+        user_id = COALESCE(excluded.user_id, applications.user_id),
         applicant_name = excluded.applicant_name,
         passport_number = excluded.passport_number,
         destination_country = excluded.destination_country,
@@ -88,7 +129,7 @@ def save_application(app_data: MasterApplicationData) -> MasterApplicationData:
         status = excluded.status,
         updated_at = excluded.updated_at,
         data_json = excluded.data_json
-    """, (app_data.applicationId, full_name, pass_num, country, visa_type, status, app_data.createdAt, now_iso, data_json))
+    """, (app_data.applicationId, user_id, full_name, pass_num, country, visa_type, status, app_data.createdAt, now_iso, data_json))
     
     conn.commit()
     conn.close()
@@ -167,11 +208,40 @@ def remove_other_drafts_for_passport(passport_number: str, keep_id: str):
         delete_application(r["id"])
 
 
-def list_applications() -> List[Dict[str, Any]]:
+def list_applications(user_id: Optional[str] = None, is_admin: bool = True) -> List[Dict[str, Any]]:
     init_db()
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, applicant_name, passport_number, destination_country, visa_type, status, created_at, updated_at FROM applications ORDER BY updated_at DESC")
+    if not is_admin and user_id:
+        cursor.execute("SELECT id, user_id, applicant_name, passport_number, destination_country, visa_type, status, created_at, updated_at FROM applications WHERE user_id = ? ORDER BY updated_at DESC", (user_id,))
+    else:
+        cursor.execute("SELECT id, user_id, applicant_name, passport_number, destination_country, visa_type, status, created_at, updated_at FROM applications ORDER BY updated_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def record_import_history(filename: str, imported_count: int, updated_count: int, skipped_count: int, errors_count: int, status: str = "Completed"):
+    import uuid
+    init_db()
+    conn = get_connection()
+    cursor = conn.cursor()
+    imp_id = f"IMP-{uuid.uuid4().hex[:8].upper()}"
+    now_str = datetime.now().isoformat()
+    cursor.execute("""
+        INSERT INTO import_history (id, filename, imported_count, updated_count, skipped_count, errors_count, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (imp_id, filename, imported_count, updated_count, skipped_count, errors_count, status, now_str))
+    conn.commit()
+    conn.close()
+    return imp_id
+
+
+def list_import_history() -> List[Dict[str, Any]]:
+    init_db()
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, filename, imported_count, updated_count, skipped_count, errors_count, status, created_at FROM import_history ORDER BY created_at DESC")
     rows = cursor.fetchall()
     conn.close()
     return [dict(r) for r in rows]

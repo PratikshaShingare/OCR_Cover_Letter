@@ -25,23 +25,23 @@ export const ApplicantModule = {
       const detail = details[path];
       if (detail) {
         if (detail.status === 'extracted' || (detail.confidence && detail.confidence >= 0.85)) {
-          return `<span class="status-badge badge-extracted">✓ Extracted from passport</span>`;
+          return `<span class="status-badge badge-extracted" data-badge-for="${path}">Extracted from passport</span>`;
         }
         if (detail.status === 'verify') {
-          return `<span class="status-badge badge-warning">⚠ Please verify</span>`;
+          return `<span class="status-badge badge-warning" data-badge-for="${path}">Please verify</span>`;
         }
         if (detail.status === 'not_found' || !detail.value) {
-          return `<span class="status-badge badge-neutral">⚠ Not found — enter manually</span>`;
+          return `<span class="status-badge badge-neutral" data-badge-for="${path}">Not found — enter manually</span>`;
         }
       }
       const st = statuses[path];
       if (st === 'ocr' && value) {
-        return `<span class="status-badge badge-extracted">✓ Extracted from passport</span>`;
+        return `<span class="status-badge badge-extracted" data-badge-for="${path}">Extracted from passport</span>`;
       }
       if (!value) {
-        return `<span class="status-badge badge-neutral">⚠ Not found — enter manually</span>`;
+        return `<span class="status-badge badge-neutral" data-badge-for="${path}">Not found — enter manually</span>`;
       }
-      return `<span class="status-badge badge-neutral">Manual Entry</span>`;
+      return `<span class="status-badge badge-neutral" data-badge-for="${path}">Manual Entry</span>`;
     };
 
     container.innerHTML = `
@@ -70,8 +70,10 @@ export const ApplicantModule = {
                 <div class="form-group">
                   <div class="form-label-row">
                     <label class="form-label">Title</label>
+                    ${getBadge('personal.title', p.title)}
                   </div>
                   <select class="form-control" name="personal.title">
+                    <option value="" ${!p.title ? 'selected' : ''}>-- Select Title --</option>
                     <option value="Mr." ${p.title === 'Mr.' ? 'selected' : ''}>Mr.</option>
                     <option value="Mrs." ${p.title === 'Mrs.' ? 'selected' : ''}>Mrs.</option>
                     <option value="Ms." ${p.title === 'Ms.' ? 'selected' : ''}>Ms.</option>
@@ -109,7 +111,7 @@ export const ApplicantModule = {
                     <label class="form-label">Date of Birth</label>
                     ${getBadge('personal.dob', p.dob)}
                   </div>
-                  <input type="text" class="form-control" name="personal.dob" value="${p.dob || ''}" placeholder="YYYY-MM-DD" />
+                  <input type="date" class="form-control" name="personal.dob" value="${p.dob || ''}" />
                 </div>
 
                 <div class="form-group">
@@ -168,7 +170,7 @@ export const ApplicantModule = {
                     <label class="form-label">Issue Date</label>
                     ${getBadge('passport.issueDate', pass.issueDate)}
                   </div>
-                  <input type="text" class="form-control" name="passport.issueDate" value="${pass.issueDate || ''}" placeholder="YYYY-MM-DD" />
+                  <input type="date" class="form-control" name="passport.issueDate" value="${pass.issueDate || ''}" />
                 </div>
 
                 <div class="form-group">
@@ -176,7 +178,7 @@ export const ApplicantModule = {
                     <label class="form-label">Expiry Date</label>
                     ${getBadge('passport.expiryDate', pass.expiryDate)}
                   </div>
-                  <input type="text" class="form-control" name="passport.expiryDate" value="${pass.expiryDate || ''}" placeholder="YYYY-MM-DD" />
+                  <input type="date" class="form-control" name="passport.expiryDate" value="${pass.expiryDate || ''}" />
                 </div>
 
                 <div class="form-group">
@@ -216,23 +218,37 @@ export const ApplicantModule = {
                   <input type="text" class="form-control" name="address.addressLine1" value="${addr.addressLine1 || ''}" placeholder="Flat / Building / Street" />
                 </div>
                 <div class="form-group col-span-2">
-                  <label class="form-label">Address Line 2</label>
+                  <div class="form-label-row">
+                    <label class="form-label">Address Line 2</label>
+                    ${getBadge('address.addressLine2', addr.addressLine2)}
+                  </div>
                   <input type="text" class="form-control" name="address.addressLine2" value="${addr.addressLine2 || ''}" placeholder="Area / Locality" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">City</label>
+                  <div class="form-label-row">
+                    <label class="form-label">City</label>
+                    ${getBadge('address.city', addr.city)}
+                  </div>
                   <input type="text" class="form-control" name="address.city" value="${addr.city || ''}" placeholder="City" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">State</label>
+                  <div class="form-label-row">
+                    <label class="form-label">State</label>
+                    ${getBadge('address.state', addr.state)}
+                  </div>
                   <input type="text" class="form-control" name="address.state" value="${addr.state || ''}" placeholder="State" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">PIN / Postal Code</label>
+                  <div class="form-label-row">
+                    <label class="form-label">PIN / Postal Code</label>
+                    ${getBadge('address.postalCode', addr.postalCode)}
+                  </div>
                   <input type="text" class="form-control" name="address.postalCode" value="${addr.postalCode || ''}" placeholder="Postal Code" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Country</label>
+                  <div class="form-label-row">
+                    <label class="form-label">Country</label>
+                  </div>
                   <input type="text" class="form-control" name="address.country" value="${addr.country || 'India'}" />
                 </div>
               </div>
@@ -292,7 +308,22 @@ export const ApplicantModule = {
               <div class="form-grid">
                 <div class="form-group">
                   <label class="form-label">Mobile Phone Number</label>
-                  <input type="text" class="form-control" name="contact.mobileNumber" value="${cont.mobileNumber || ''}" placeholder="+91 98765 43210" />
+                  <div style="display: flex; gap: 8px;">
+                    <select class="form-control" name="contact.countryCode" style="max-width: 140px;">
+                      <option value="+91" ${(cont.countryCode || '+91') === '+91' ? 'selected' : ''}>+91 (India)</option>
+                      <option value="+1" ${cont.countryCode === '+1' ? 'selected' : ''}>+1 (US/CA)</option>
+                      <option value="+44" ${cont.countryCode === '+44' ? 'selected' : ''}>+44 (UK)</option>
+                      <option value="+971" ${cont.countryCode === '+971' ? 'selected' : ''}>+971 (UAE)</option>
+                      <option value="+65" ${cont.countryCode === '+65' ? 'selected' : ''}>+65 (SG)</option>
+                      <option value="+81" ${cont.countryCode === '+81' ? 'selected' : ''}>+81 (JP)</option>
+                      <option value="+61" ${cont.countryCode === '+61' ? 'selected' : ''}>+61 (AU)</option>
+                      <option value="+49" ${cont.countryCode === '+49' ? 'selected' : ''}>+49 (DE)</option>
+                      <option value="+33" ${cont.countryCode === '+33' ? 'selected' : ''}>+33 (FR)</option>
+                      <option value="+39" ${cont.countryCode === '+39' ? 'selected' : ''}>+39 (IT)</option>
+                      <option value="+41" ${cont.countryCode === '+41' ? 'selected' : ''}>+41 (CH)</option>
+                    </select>
+                    <input type="tel" class="form-control" name="contact.mobileNumber" value="${cont.mobileNumber || ''}" placeholder="98765 43210" style="flex: 1;" />
+                  </div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Email Address</label>
@@ -360,11 +391,23 @@ export const ApplicantModule = {
               <div id="group-student" class="form-grid" style="display: ${emp.employmentStatus === 'Student' ? 'grid' : 'none'};">
                 <div class="form-group">
                   <label class="form-label">School / College Name</label>
-                  <input type="text" class="form-control" name="employment.schoolCollegeName" value="${emp.schoolCollegeName || ''}" placeholder="Educational Institute" />
+                  <input type="text" class="form-control" name="employment.schoolCollegeName" value="${emp.schoolCollegeName || ''}" placeholder="School / University Name" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Grade / Class / Degree</label>
-                  <input type="text" class="form-control" name="employment.gradeClass" value="${emp.gradeClass || ''}" placeholder="e.g. 10th Grade, B.Com 2nd Year" />
+                  <label class="form-label">Course / Degree</label>
+                  <input type="text" class="form-control" name="employment.courseName" value="${emp.courseName || ''}" placeholder="e.g. B.Tech Computer Science" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Grade / Year</label>
+                  <input type="text" class="form-control" name="employment.gradeClass" value="${emp.gradeClass || ''}" placeholder="e.g. 3rd Year" />
+                </div>
+              </div>
+
+              <!-- Common Financial Field -->
+              <div class="form-grid" style="margin-top: 16px;">
+                <div class="form-group">
+                  <label class="form-label">Annual Income / Revenue</label>
+                  <input type="text" class="form-control" name="employment.annualIncome" value="${emp.annualIncome || ''}" placeholder="e.g. INR 12,50,000" />
                 </div>
               </div>
             </div>
@@ -373,10 +416,10 @@ export const ApplicantModule = {
           <!-- Navigation Buttons -->
           <div class="step-nav-bar">
             <button type="button" class="btn btn-secondary" id="btn-back-passport">
-              ← Back to Passport
+              Back to Passport Ingestion
             </button>
             <button type="submit" class="btn btn-primary" id="btn-save-applicant">
-              Confirm & Continue to Travellers →
+              Save & Continue to Travellers
             </button>
           </div>
         </form>
@@ -409,6 +452,31 @@ export const ApplicantModule = {
       });
     }
 
+    // Dynamic field indicators live update
+    const form = container.querySelector('#applicant-form');
+    if (form) {
+      form.querySelectorAll('input, select').forEach(input => {
+        const handleLiveChange = (e) => {
+          const name = e.target.name;
+          const badge = container.querySelector(`[data-badge-for="${name}"]`);
+          if (badge) {
+            const hasVal = e.target.value && e.target.value.trim().length > 0;
+            if (hasVal) {
+              if (badge.textContent.includes('Not found') || badge.textContent.includes('Required')) {
+                badge.className = 'status-badge badge-extracted';
+                badge.textContent = 'User Provided';
+              }
+            } else {
+              badge.className = 'status-badge badge-neutral';
+              badge.textContent = 'Not found — enter manually';
+            }
+          }
+        };
+        input.addEventListener('input', handleLiveChange);
+        input.addEventListener('change', handleLiveChange);
+      });
+    }
+
     // Back button
     const btnBack = container.querySelector('#btn-back-passport');
     if (btnBack) {
@@ -416,7 +484,6 @@ export const ApplicantModule = {
     }
 
     // Form Submit / Save
-    const form = container.querySelector('#applicant-form');
     if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
