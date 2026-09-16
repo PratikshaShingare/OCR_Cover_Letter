@@ -380,7 +380,7 @@ export const AdminPortalModule = {
             ${list.map(item => `
               <tr>
                 <td><strong>${item.filename}</strong></td>
-                <td style="font-size: 0.82rem; color: var(--muted);">${item.imported_at ? new Date(item.imported_at).toLocaleString() : '—'}</td>
+                <td style="font-size: 0.82rem; color: var(--muted);">${(item.created_at || item.imported_at) ? new Date(item.created_at || item.imported_at).toLocaleString() : '—'}</td>
                 <td><span style="color: #16a34a; font-weight: 600;">+${item.imported_count}</span></td>
                 <td>${item.updated_count}</td>
                 <td>${item.skipped_count}</td>
