@@ -122,12 +122,19 @@ class MockOCRProvider(BaseOCRProvider):
         digital_text = ""
         if is_pdf:
             try:
-                import pypdf
-                reader = pypdf.PdfReader(io.BytesIO(file_bytes))
-                for page in reader.pages:
-                    digital_text += (page.extract_text() or "") + "\n"
+                import pypdfium2 as pdfium
+                pdf_doc = pdfium.PdfDocument(io.BytesIO(file_bytes))
+                for page in pdf_doc:
+                    textpage = page.get_textpage()
+                    digital_text += (textpage.get_text_range() or "") + "\n"
             except Exception:
-                pass
+                try:
+                    import pypdf
+                    reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+                    for page in reader.pages:
+                        digital_text += (page.extract_text() or "") + "\n"
+                except Exception:
+                    pass
 
         # 2. Render & Preprocess Images
         pil_images = []
