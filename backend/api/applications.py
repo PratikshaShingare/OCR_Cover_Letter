@@ -110,10 +110,12 @@ def get_empty_preview_svg(label: str = "Document Preview") -> str:
 
 def render_passport_previews(saved_path: str, ext: str, passport_dir: str) -> int:
     """
-    Renders high-resolution PNG previews instantly using pypdfium2 without blocking on OCR.
-    Runs in ~0.05 seconds.
+    Renders high-resolution PNG previews with fast auto-orientation.
+    Guarantees proper horizontal passport layout (width >= height).
+    Runs in < 0.5s per page using fast thumbnail orientation scoring.
     """
     total_pages = 1
+    from ..ocr.mock_provider import get_oriented_page_ocr
     if ext == ".pdf":
         try:
             import pypdfium2 as pdfium
@@ -121,17 +123,20 @@ def render_passport_previews(saved_path: str, ext: str, passport_dir: str) -> in
             total_pages = len(doc)
             for i in range(min(total_pages, 10)):
                 raw_img = doc[i].render(scale=2.0).to_pil()
-                raw_img.save(os.path.join(passport_dir, f"preview_page_{i + 1}.png"), "PNG")
+                oriented_img, _, _ = get_oriented_page_ocr(raw_img)
+                oriented_img.save(os.path.join(passport_dir, f"preview_page_{i + 1}.png"), "PNG")
         except Exception as render_err:
             print(f"PDF preview rendering notice: {render_err}")
     else:
         try:
             from PIL import Image
             img = Image.open(saved_path).convert("RGB")
-            img.save(os.path.join(passport_dir, "preview_page_1.png"), "PNG")
+            oriented_img, _, _ = get_oriented_page_ocr(img)
+            oriented_img.save(os.path.join(passport_dir, "preview_page_1.png"), "PNG")
         except Exception:
             shutil.copy(saved_path, os.path.join(passport_dir, "preview_page_1.png"))
     return total_pages
+
 
 
 def apply_extracted_data_to_application(app: MasterApplicationData, extracted: Any) -> MasterApplicationData:

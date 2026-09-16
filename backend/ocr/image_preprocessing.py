@@ -10,12 +10,13 @@ from typing import List, Tuple, Optional
 from PIL import Image, ImageEnhance, ImageFilter
 
 
-def render_pdf_to_images(pdf_bytes: bytes, scale: float = 3.0, max_pages: int = 4) -> List[Image.Image]:
+def render_pdf_to_images(pdf_bytes: bytes, scale: float = 2.0, max_pages: int = 4) -> List[Image.Image]:
     """
     Renders PDF pages to high-resolution PIL images using pypdfium2.
-    scale=3.0 produces ~216-300 DPI, ensuring sharp text and clear MRZ glyphs.
+    scale=2.0 produces crisp ~150-200 DPI, ensuring sharp text and clear MRZ glyphs with fast processing.
     For booklets with > 3 pages, renders the first two pages and the final page (family & address).
     """
+
     images = []
     try:
         import pypdfium2 as pdfium

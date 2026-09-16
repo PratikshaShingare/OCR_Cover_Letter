@@ -49,40 +49,89 @@ def score_ocr_text(text: str) -> int:
 
 def get_oriented_page_ocr(img: Image.Image) -> Tuple[Image.Image, str, int]:
     """
-    Tests 0° first. If keyword score < 10, tests 90°, 180°, 270° and selects
-    the orientation that yields the most complete readable passport text.
+    Ultra-fast 4-way orientation detection using an optimized downsampled thumbnail.
+    Tests 0° first. If keyword score < 10, tests 90°, 180°, 270°.
+    Guarantees proper horizontal passport layout (width >= height).
     Returns (oriented_image, ocr_text, angle).
     """
+    # 1. Create fast downsampled thumbnail for orientation detection (max 800px)
+    w, h = img.size
+    ratio = 800.0 / max(w, h)
+    if ratio < 1.0:
+        fast_img = img.resize((int(w * ratio), int(h * ratio)), Image.Resampling.BILINEAR)
+    else:
+        fast_img = img
+
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
         t0 = tmp.name
     try:
-        img.save(t0, "PNG")
+        fast_img.save(t0, "PNG")
         txt0 = run_system_ocr(t0, psm=3)
     finally:
         if os.path.exists(t0):
             os.remove(t0)
 
     s0 = score_ocr_text(txt0)
-    if s0 >= 10:
-        return img, txt0, 0
+    best_ang = 0
+    best_score = s0
+    best_txt = txt0
 
-    best_img, best_txt, best_ang, best_score = img, txt0, 0, s0
-    for ang in [90, 180, 270]:
-        rot = img.rotate(ang, expand=True)
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-            t = tmp.name
+    if s0 < 10:
+        for ang in [90, 180, 270]:
+            rot_fast = fast_img.rotate(ang, expand=True)
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                t = tmp.name
+            try:
+                rot_fast.save(t, "PNG")
+                txt = run_system_ocr(t, psm=3)
+            finally:
+                if os.path.exists(t):
+                    os.remove(t)
+            sc = score_ocr_text(txt)
+            if sc > best_score:
+                best_score = sc
+                best_ang = ang
+                best_txt = txt
+                if best_score >= 12:
+                    break
+
+    # 2. Rotate original full-resolution image to best angle
+    oriented_img = img.rotate(best_ang, expand=True) if best_ang != 0 else img
+
+    # 3. Horizontal Passport Guarantee:
+    # A passport biographical spread is always landscape (width > height).
+    # If the oriented image is vertical (height > width), orient it horizontally.
+    if oriented_img.height > oriented_img.width:
+        rot_90 = oriented_img.rotate(90, expand=True)
+        rot_270 = oriented_img.rotate(270, expand=True)
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp90:
+            t90 = tmp90.name
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp270:
+            t270 = tmp270.name
         try:
-            rot.save(t, "PNG")
-            txt = run_system_ocr(t, psm=3)
+            f90 = rot_90.resize((int(rot_90.width * (800.0 / max(rot_90.size))), int(rot_90.height * (800.0 / max(rot_90.size)))), Image.Resampling.BILINEAR) if max(rot_90.size) > 800 else rot_90
+            f270 = rot_270.resize((int(rot_270.width * (800.0 / max(rot_270.size))), int(rot_270.height * (800.0 / max(rot_270.size)))), Image.Resampling.BILINEAR) if max(rot_270.size) > 800 else rot_270
+            f90.save(t90, "PNG")
+            f270.save(t270, "PNG")
+            txt90 = run_system_ocr(t90, psm=3)
+            txt270 = run_system_ocr(t270, psm=3)
+            s90 = score_ocr_text(txt90)
+            s270 = score_ocr_text(txt270)
+            if s90 >= s270:
+                oriented_img = rot_90
+                best_txt = txt90
+                best_ang = (best_ang + 90) % 360
+            else:
+                oriented_img = rot_270
+                best_txt = txt270
+                best_ang = (best_ang + 270) % 360
         finally:
-            if os.path.exists(t):
-                os.remove(t)
-        sc = score_ocr_text(txt)
-        if sc > best_score:
-            best_score, best_img, best_txt, best_ang = sc, rot, txt, ang
-            if best_score >= 12:
-                break
-    return best_img, best_txt, best_ang
+            if os.path.exists(t90):
+                os.remove(t90)
+            if os.path.exists(t270):
+                os.remove(t270)
+
+    return oriented_img, best_txt, best_ang
 
 
 class MockOCRProvider(BaseOCRProvider):
