@@ -4,12 +4,9 @@
  * Automatically resolves local vs production backend endpoint.
  */
 
-// Production Backend HTTPS Endpoint for Khanna Travels Visa Automation System
-const DEFAULT_PROD_API = 'https://ocr-cover-letter.onrender.com/api';
-
 export function resolveApiBaseUrl() {
   if (typeof window !== 'undefined') {
-    // 1. URL parameter override: ?api=https://...
+    // 1. URL parameter override: ?api=http://...
     const urlParams = new URLSearchParams(window.location.search);
     const queryApi = urlParams.get('api');
     if (queryApi) {
@@ -26,16 +23,11 @@ export function resolveApiBaseUrl() {
     if (stored) {
       return stored.replace(/\/+$/, '');
     }
-
-    // 4. Hostname detection: if on GitHub Pages (pratikshashingare.github.io) or remote domain
-    const isLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
-    if (!isLocal && window.location.hostname.includes('github.io')) {
-      return DEFAULT_PROD_API;
-    }
   }
   // Local development default
   return '/api';
 }
+
 
 const API_BASE = resolveApiBaseUrl();
 

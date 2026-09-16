@@ -23,9 +23,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Secure CORS configuration for GitHub Pages production frontend & local development
+# Local development CORS configuration
 ALLOWED_ORIGINS = [
-    "https://pratikshashingare.github.io",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://localhost:5173",
@@ -38,11 +37,11 @@ if env_origins:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=r"https://.*\.github\.io.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Include API routers
 app.include_router(ocr_router)
@@ -106,9 +105,6 @@ async def serve_logo():
 
 @app.get("/")
 async def serve_root():
-    root_index = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "index.html"))
-    if os.path.exists(root_index):
-        return FileResponse(root_index)
     index_file = os.path.join(frontend_dir, "index.html")
     if os.path.exists(index_file):
         return FileResponse(index_file)
@@ -117,13 +113,11 @@ async def serve_root():
 
 @app.get("/{full_path:path}")
 async def serve_spa(request: Request, full_path: str):
-    if full_path.startswith("api") or full_path.startswith("css") or full_path.startswith("js") or full_path.startswith("frontend"):
+    if full_path.startswith("api") or full_path.startswith("css") or full_path.startswith("js"):
         return None
-    root_index = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "index.html"))
-    if os.path.exists(root_index):
-        return FileResponse(root_index)
     index_file = os.path.join(frontend_dir, "index.html")
     if os.path.exists(index_file):
         return FileResponse(index_file)
     return {"message": "Frontend not found"}
+
 
