@@ -49,89 +49,60 @@ def score_ocr_text(text: str) -> int:
 
 def get_oriented_page_ocr(img: Image.Image) -> Tuple[Image.Image, str, int]:
     """
-    Ultra-fast 4-way orientation detection using an optimized downsampled thumbnail.
-    Tests 0° first. If keyword score < 10, tests 90°, 180°, 270°.
+    Ultra-fast orientation detection guaranteeing proper horizontal passport layout (width >= height).
+    - If vertical (height > width): tests 90° vs 270° (at most 2 fast thumbnail tests).
+    - If horizontal (width >= height): tests 0° vs 180° (at most 2 fast thumbnail tests).
     Guarantees proper horizontal passport layout (width >= height).
     Returns (oriented_image, ocr_text, angle).
     """
-    # 1. Create fast downsampled thumbnail for orientation detection (max 800px)
-    w, h = img.size
-    ratio = 800.0 / max(w, h)
-    if ratio < 1.0:
-        fast_img = img.resize((int(w * ratio), int(h * ratio)), Image.Resampling.BILINEAR)
-    else:
-        fast_img = img
-
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-        t0 = tmp.name
-    try:
-        fast_img.save(t0, "PNG")
-        txt0 = run_system_ocr(t0, psm=3)
-    finally:
-        if os.path.exists(t0):
-            os.remove(t0)
-
-    s0 = score_ocr_text(txt0)
-    best_ang = 0
-    best_score = s0
-    best_txt = txt0
-
-    if s0 < 10:
-        for ang in [90, 180, 270]:
-            rot_fast = fast_img.rotate(ang, expand=True)
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-                t = tmp.name
-            try:
-                rot_fast.save(t, "PNG")
-                txt = run_system_ocr(t, psm=3)
-            finally:
-                if os.path.exists(t):
-                    os.remove(t)
-            sc = score_ocr_text(txt)
-            if sc > best_score:
-                best_score = sc
-                best_ang = ang
-                best_txt = txt
-                if best_score >= 12:
-                    break
-
-    # 2. Rotate original full-resolution image to best angle
-    oriented_img = img.rotate(best_ang, expand=True) if best_ang != 0 else img
-
-    # 3. Horizontal Passport Guarantee:
-    # A passport biographical spread is always landscape (width > height).
-    # If the oriented image is vertical (height > width), orient it horizontally.
-    if oriented_img.height > oriented_img.width:
-        rot_90 = oriented_img.rotate(90, expand=True)
-        rot_270 = oriented_img.rotate(270, expand=True)
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp90:
-            t90 = tmp90.name
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp270:
-            t270 = tmp270.name
+    def get_thumb_ocr(image: Image.Image) -> Tuple[str, int]:
+        w, h = image.size
+        ratio = 600.0 / max(w, h)
+        if ratio < 1.0:
+            thumb = image.resize((int(w * ratio), int(h * ratio)), Image.Resampling.BILINEAR)
+        else:
+            thumb = image
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            tmp_path = tmp.name
         try:
-            f90 = rot_90.resize((int(rot_90.width * (800.0 / max(rot_90.size))), int(rot_90.height * (800.0 / max(rot_90.size)))), Image.Resampling.BILINEAR) if max(rot_90.size) > 800 else rot_90
-            f270 = rot_270.resize((int(rot_270.width * (800.0 / max(rot_270.size))), int(rot_270.height * (800.0 / max(rot_270.size)))), Image.Resampling.BILINEAR) if max(rot_270.size) > 800 else rot_270
-            f90.save(t90, "PNG")
-            f270.save(t270, "PNG")
-            txt90 = run_system_ocr(t90, psm=3)
-            txt270 = run_system_ocr(t270, psm=3)
-            s90 = score_ocr_text(txt90)
-            s270 = score_ocr_text(txt270)
-            if s90 >= s270:
-                oriented_img = rot_90
-                best_txt = txt90
-                best_ang = (best_ang + 90) % 360
-            else:
-                oriented_img = rot_270
-                best_txt = txt270
-                best_ang = (best_ang + 270) % 360
+            thumb.save(tmp_path, "PNG")
+            txt = run_system_ocr(tmp_path, psm=3)
         finally:
-            if os.path.exists(t90):
-                os.remove(t90)
-            if os.path.exists(t270):
-                os.remove(t270)
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+        return txt, score_ocr_text(txt)
 
-    return oriented_img, best_txt, best_ang
+    if img.height > img.width:
+        # Document was scanned vertically in portrait.
+        # Passports are always horizontal landscape. Test the two landscape rotations: 90° and 270°.
+        rot90 = img.rotate(90, expand=True)
+        rot270 = img.rotate(270, expand=True)
+
+        txt270, s270 = get_thumb_ocr(rot270)
+        if s270 >= 8:
+            return rot270, txt270, 270
+
+        txt90, s90 = get_thumb_ocr(rot90)
+        if s90 > s270:
+            return rot90, txt90, 90
+        else:
+            # Default to 270° (standard clockwise rotation to landscape)
+            return rot270, txt270, 270
+    else:
+        # Document is already horizontal landscape (width >= height).
+        txt0, s0 = get_thumb_ocr(img)
+        if s0 >= 8:
+            return img, txt0, 0
+
+        # Test upside-down (180°)
+        rot180 = img.rotate(180, expand=True)
+        txt180, s180 = get_thumb_ocr(rot180)
+        if s180 > s0:
+            return rot180, txt180, 180
+        return img, txt0, 0
 
 
 class MockOCRProvider(BaseOCRProvider):
@@ -161,21 +132,38 @@ class MockOCRProvider(BaseOCRProvider):
         # 2. Render & Preprocess Images
         pil_images = []
         if is_pdf:
-            # High-resolution rendering at scale=3 (~300 DPI)
-            pil_images = render_pdf_to_images(file_bytes, scale=3.0, max_pages=4)
-            print(f"[OCR] Rendered {len(pil_images)} page(s) at high resolution")
+            # High-resolution rendering at scale=2 (~150-200 DPI) for fast OCR and low memory
+            pil_images = render_pdf_to_images(file_bytes, scale=2.0, max_pages=2)
+            print(f"[OCR] Rendered {len(pil_images)} page(s) at scale=2.0")
         else:
             loaded_img = load_image_bytes(file_bytes)
             if loaded_img:
                 pil_images = [loaded_img]
 
-        # 3. OCR on Full Page & Enhanced MRZ Crop with 4-Way Orientation Detection
+        # 3. OCR on Full Page & Enhanced MRZ Crop with Fast Orientation Detection
         ocr_texts = []
         for idx, img in enumerate(pil_images):
             # A. Find correct orientation and perform full-page OCR
             best_img, text_full, angle = get_oriented_page_ocr(img)
             if angle != 0:
                 print(f"[OCR] Page {idx+1}: Auto-rotated {angle}° for optimal reading")
+
+            # If thumbnail text was sparse, run OCR on the full oriented image
+            if len(text_full.strip()) < 100:
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_full:
+                    tmp_full_path = tmp_full.name
+                try:
+                    best_img.save(tmp_full_path, "PNG")
+                    more_text = run_system_ocr(tmp_full_path, psm=3)
+                    if more_text:
+                        text_full = f"{text_full}\n{more_text}"
+                finally:
+                    if os.path.exists(tmp_full_path):
+                        try:
+                            os.remove(tmp_full_path)
+                        except Exception:
+                            pass
+
             if text_full:
                 ocr_texts.append(text_full)
 
@@ -191,7 +179,10 @@ class MockOCRProvider(BaseOCRProvider):
                         ocr_texts.append(text_mrz)
                 finally:
                     if os.path.exists(tmp_mrz_path):
-                        os.remove(tmp_mrz_path)
+                        try:
+                            os.remove(tmp_mrz_path)
+                        except Exception:
+                            pass
             except Exception as mrz_err:
                 print(f"[OCR] MRZ crop notice: {mrz_err}")
 

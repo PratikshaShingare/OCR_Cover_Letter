@@ -110,12 +110,10 @@ def get_empty_preview_svg(label: str = "Document Preview") -> str:
 
 def render_passport_previews(saved_path: str, ext: str, passport_dir: str) -> int:
     """
-    Renders high-resolution PNG previews with fast auto-orientation.
+    Renders high-resolution PNG previews instantly (< 0.1s).
     Guarantees proper horizontal passport layout (width >= height).
-    Runs in < 0.5s per page using fast thumbnail orientation scoring.
     """
     total_pages = 1
-    from ..ocr.mock_provider import get_oriented_page_ocr
     if ext == ".pdf":
         try:
             import pypdfium2 as pdfium
@@ -123,16 +121,18 @@ def render_passport_previews(saved_path: str, ext: str, passport_dir: str) -> in
             total_pages = len(doc)
             for i in range(min(total_pages, 10)):
                 raw_img = doc[i].render(scale=2.0).to_pil()
-                oriented_img, _, _ = get_oriented_page_ocr(raw_img)
-                oriented_img.save(os.path.join(passport_dir, f"preview_page_{i + 1}.png"), "PNG")
+                if raw_img.height > raw_img.width:
+                    raw_img = raw_img.rotate(270, expand=True)
+                raw_img.save(os.path.join(passport_dir, f"preview_page_{i + 1}.png"), "PNG")
         except Exception as render_err:
             print(f"PDF preview rendering notice: {render_err}")
     else:
         try:
             from PIL import Image
             img = Image.open(saved_path).convert("RGB")
-            oriented_img, _, _ = get_oriented_page_ocr(img)
-            oriented_img.save(os.path.join(passport_dir, "preview_page_1.png"), "PNG")
+            if img.height > img.width:
+                img = img.rotate(270, expand=True)
+            img.save(os.path.join(passport_dir, "preview_page_1.png"), "PNG")
         except Exception:
             shutil.copy(saved_path, os.path.join(passport_dir, "preview_page_1.png"))
     return total_pages
@@ -377,17 +377,16 @@ async def get_application_passport_preview(app_id: str, page: int = 1):
             headers={"Content-Disposition": "inline", "Cache-Control": "no-cache"}
         )
 
-    # Dynamic on-demand rendering if preview file does not yet exist
     pdf_path = os.path.join(passport_dir, "passport.pdf")
     if os.path.exists(pdf_path):
         try:
             import pypdfium2 as pdfium
-            from ..ocr.mock_provider import get_oriented_page_ocr
             doc = pdfium.PdfDocument(pdf_path)
             target_idx = max(0, min(page - 1, len(doc) - 1))
             page_img = doc[target_idx].render(scale=2.0).to_pil()
-            oriented_img, _, _ = get_oriented_page_ocr(page_img)
-            oriented_img.save(preview_file, "PNG")
+            if page_img.height > page_img.width:
+                page_img = page_img.rotate(270, expand=True)
+            page_img.save(preview_file, "PNG")
             return FileResponse(
                 path=preview_file,
                 media_type="image/png",
